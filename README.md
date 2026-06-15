@@ -42,16 +42,6 @@ flowchart LR
 
 ---
 
-## Roadmap
-
-| Layer | What it adds | Status |
-|---|---|---|
-| **L2 — Reasoning** | Claude API tool-use: `lookup_ncci_edit()` · `get_lcd_policy()` · `check_modifier()` — constrained JSON output · CARC/RARC enum enforcement · noise-injection eval | Tue Jun 16 |
-| **L3 — Action** | Tiered confidence-gated autonomy: auto-correct (conf ≥ 0.92, charge ≤ $500) · flag · escalate with drafted correction · kill-switch · FCA-compliant audit log | Wed Jun 17 |
-| **L4 — Feedback** | Post-adjudication outcomes on delayed/out-of-order topic · prediction vs adjudication in Snowflake · Great Expectations drift monitor · Streamlit lift dashboard | Wed Jun 17 |
-
----
-
 ## Stack
 
 | Layer | Technology |
