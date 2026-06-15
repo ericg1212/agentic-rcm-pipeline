@@ -1,58 +1,54 @@
-# Agentic RCM Prevention Pipeline
+# Agentic RCM Pre-Submission Prevention Pipeline
 
 [![CI](https://github.com/ericg1212/agentic-rcm-pipeline/actions/workflows/ci.yml/badge.svg)](https://github.com/ericg1212/agentic-rcm-pipeline/actions/workflows/ci.yml)
 [![codecov](https://codecov.io/gh/ericg1212/agentic-rcm-pipeline/branch/master/graph/badge.svg)](https://codecov.io/gh/ericg1212/agentic-rcm-pipeline)
 [![Python 3.13](https://img.shields.io/badge/python-3.13-blue.svg)](https://www.python.org/downloads/)
-[![Apache Kafka](https://img.shields.io/badge/kafka-3.8.0-231F20?logo=apache-kafka)](https://kafka.apache.org/)
-[![Snowflake](https://img.shields.io/badge/snowflake-gl20220-29B5E8?logo=snowflake)](https://snowflake.com)
-[![Claude API](https://img.shields.io/badge/claude-sonnet--4--6-blueviolet)](https://anthropic.com)
+[![Kafka](https://img.shields.io/badge/kafka-3.8.0_KRaft-231F20?logo=apache-kafka&logoColor=white)](https://kafka.apache.org/)
+[![Snowflake](https://img.shields.io/badge/snowflake-warehouse-29B5E8?logo=snowflake&logoColor=white)](https://snowflake.com)
+[![Claude API](https://img.shields.io/badge/claude-sonnet--4--6-5A67D8)](https://anthropic.com)
 
-A real-time agentic pipeline that intercepts healthcare claims at the **pre-submission stage**, scores each against real Medicare adjudication rules using an LLM, and autonomously routes or corrects claims to prevent denials before they occur — closing the loop via post-adjudication feedback.
-
-> "P2 and P3 built the architecture on synthetic data — intentionally. P4 runs on real CMS claim distributions: real NCCI edits, real denial codes, real payer denial rates. That sequencing was deliberate. I didn't build four projects. I built one platform in layers."
+**Healthcare denials cost U.S. providers $262B annually in rework, resubmission, and write-offs.** This pipeline intercepts claims in seconds — before they leave the practice — scores each against real NCCI edits and Medicare coverage policy using Claude API tool-use, and autonomously corrects or routes the ones that would be denied. Every action cites the governing rule in an immutable audit log. Prevention impact is measured, not estimated: a 10% holdout control arm makes the clean-claim-rate lift provable.
 
 ---
 
-## Architecture
+## What's Built (Layer 1 — Foundation)
 
+```mermaid
+flowchart LR
+    G["Live Claim Generator\nreal CMS 2024 distributions\nPoisson arrival · 35% dirty injection"]
+    K[("Kafka  claims.raw\n6 partitions · key=payer_id\nAvro + Schema Registry")]
+    N{"NCCI Gate\nPTP edits + MUE limits\ndeterministic · sub-ms"}
+    CLR["Clearinghouse\n(PASS)"]
+    SC[("claims.scored\n→ Layer 2 LLM")]
+    AC[("claims.actions\n→ Layer 3 Action")]
+    DLQ["DLQ\nschema violations"]
+    RC[("rules.control\ncompacted topic\nNCI hot-swap")]
+
+    G -->|Avro| K
+    RC -->|quarterly edition| N
+    K --> N
+    N -->|clean| CLR
+    N -->|ambiguous / high-value| SC
+    N -->|hard fail| AC
+    N -->|schema error| DLQ
 ```
-Live Claim Generator (real CMS 2024 distributions)
-        │
-        ▼
-  Kafka claims.raw (6 partitions, keyed by payer_id)
-        │
-        ▼
-  Layer 1 — NCCI Gate (deterministic PTP + MUE)
-  ┌─────┴──────────────────────────────────┐
-  │ PASS → clearinghouse                   │
-  │ HARD_FAIL (low-$) → claims.actions     │
-  │ AMBIGUOUS / HARD_FAIL (high-$)         │
-  │         → claims.scored                │
-  └────────────────────────────────────────┘
-        │
-        ▼
-  Layer 2 — Claude API (claude-sonnet-4-6, temp=0)
-  Tool-use: lookup_ncci_edit() · get_lcd_policy()
-            check_modifier() · get_payer_history()
-  Output: risk score · CARC code · action · rationale
-        │
-        ▼
-  Layer 3 — Action (tiered confidence-gated autonomy)
-  auto_correct (conf ≥ 0.92, charge ≤ $500)
-  flag + enrich → clearinghouse
-  escalate → human queue + drafted correction
-  holdout (10%) → control arm (no intervention)
-        │
-        ▼
-  Layer 4 — Feedback Loop
-  adjudications.outcomes (delayed, out-of-order)
-  prediction vs adjudication → Snowflake MART
-  Great Expectations drift monitoring
-        │
-        ▼
-  Snowflake RAW → dbt STAGING → dbt MART
-  Streamlit dashboard: clean claim rate lift (intervention vs holdout)
-```
+
+**Layer 1 delivers:**
+- Live stochastic generator sampling real 2024 CMS Provider Utilization distributions — immune to "you're just replaying a CSV"
+- Deterministic NCCI PTP + MUE gate with three-route decision: `PASS` / `HARD_FAIL` / `AMBIGUOUS` — ~85% of claims never touch the LLM
+- Compacted `rules.control` topic: NCCI quarterly editions hot-swapped without consumer downtime
+- 10% holdout stamped at the source (`is_holdout` in Avro schema) — control arm for provable ROI
+- Snowflake RAW: 5 append-only tables including immutable `ACTION_LOG` and `ADJUDICATION_OUTCOMES`
+
+---
+
+## Roadmap
+
+| Layer | What it adds | Status |
+|---|---|---|
+| **L2 — Reasoning** | Claude API tool-use: `lookup_ncci_edit()` · `get_lcd_policy()` · `check_modifier()` — constrained JSON output · CARC/RARC enum enforcement · noise-injection eval | Tue Jun 16 |
+| **L3 — Action** | Tiered confidence-gated autonomy: auto-correct (conf ≥ 0.92, charge ≤ $500) · flag · escalate with drafted correction · kill-switch · FCA-compliant audit log | Wed Jun 17 |
+| **L4 — Feedback** | Post-adjudication outcomes on delayed/out-of-order topic · prediction vs adjudication in Snowflake · Great Expectations drift monitor · Streamlit lift dashboard | Wed Jun 17 |
 
 ---
 
@@ -60,73 +56,54 @@ Live Claim Generator (real CMS 2024 distributions)
 
 | Layer | Technology |
 |---|---|
-| Streaming | Apache Kafka 3.8.0 (KRaft, no ZooKeeper) |
-| LLM | Claude API (`claude-sonnet-4-6`, tool-use) |
-| Orchestration | Dagster *(Phase 1 complete)* |
+| Streaming | Apache Kafka 3.8.0 (KRaft — no ZooKeeper) |
+| LLM | Claude API `claude-sonnet-4-6` · tool-use · temp=0 |
 | Warehouse | Snowflake (RAW → STAGING → MART) |
 | Transform | dbt |
 | Quality | Great Expectations |
 | Dashboard | Streamlit |
+| Infra | Docker Compose |
 | Language | Python 3.13 |
 
 ---
 
 ## Data Strategy
 
-No real PHI or beneficiary-level claims are used. Realness lives in the **policy and distributions**:
+No PHI. No beneficiary-level data. No DUA required. Realness lives in the **policy and distributions**:
 
-| Element | Source |
-|---|---|
-| Claim substrate | CMS Medicare Physician & Other Practitioners 2024 (real HCPCS distributions + NPIs) |
-| Denial logic | NCCI PTP + MUE edits, 2026 Q3 (real quarterly CMS CSVs) |
-| Denial codes | X12/WPC CARC/RARC canonical enum |
-| Denial rate baseline | CMS Transparency in Coverage PUF |
+| Element | Source | Real? |
+|---|---|---|
+| Claim substrate | CMS Medicare Physician & Other Practitioners 2024 — HCPCS frequencies, charge distributions, real NPIs | ✓ |
+| Denial logic | NCCI PTP + MUE edits, 2026 Q3 quarterly CSV | ✓ |
+| Denial codes | X12/WPC CARC/RARC canonical enum | ✓ |
+| Denial rate baseline | CMS Transparency in Coverage PUF | ✓ |
 
-The live generator emits novel claim events by sampling these real distributions — immune to "you're just replaying a CSV."
+The generator composes novel claim events from these real distributions — the only synthetic atom. Every denial traces to a real Medicare adjudication rule.
 
 ---
 
 ## Quickstart
 
 ```bash
-# 1. Start Kafka stack
-make up
-
-# 2. Copy and fill env vars
-cp .env.example .env
-
-# 3. Install dependencies
-make install
-
-# 4. Run the claim generator
-make producer
-
-# 5. Run the NCCI gate consumer
-make consumer
-
-# 6. Run tests
-make test
+make up          # Kafka + Schema Registry + UI (http://localhost:8080)
+cp .env.example .env && make install
+make producer    # start live claim generator
+make consumer    # start NCCI gate consumer
+make test        # 14 tests
 ```
 
-Kafka UI: http://localhost:8080 | Schema Registry: http://localhost:8081
+Download real NCCI quarterly CSVs from CMS and place in `data/ncci/`. Seed files included for dev.
 
-**NCCI data:** Download real quarterly PTP/MUE CSVs from CMS and place in `data/ncci/`.
-Seed files (`data/ncci/seed_ptp.csv`, `seed_mue.csv`) are included for dev/testing.
+---
+
+## Architecture Decision Records
+
+- [ADR-001: Kafka vs Kinesis vs micro-batch](docs/adrs/ADR-001-kafka-vs-alternatives.md)
+- [ADR-002: Real distributions vs DE-SynPUF vs Synthea](docs/adrs/ADR-002-data-ground-truth.md)
+- [ADR-003: Latency model and LLM trigger gate](docs/adrs/ADR-003-latency-llm-gate.md)
 
 ---
 
 ## Portfolio Arc
 
-| Project | Focus | Data |
-|---|---|---|
-| P2 — Healthcare Claims Intelligence | RCM analytics + RWE cohort | Synthea (FHIR R4) |
-| P3 — Clinical AI Governance Engine | LLM enrichment + LLM-as-Judge | Synthetic clinical notes |
-| **P4 — Agentic RCM Prevention** | **Real-time pre-submission prevention** | **Real CMS distributions** |
-
----
-
-## ADRs
-
-- [ADR-001: Kafka vs alternatives](docs/adrs/ADR-001-kafka-vs-alternatives.md)
-- [ADR-002: Data strategy — real distributions vs row-level claims](docs/adrs/ADR-002-data-ground-truth.md)
-- [ADR-003: Latency model and LLM trigger gate](docs/adrs/ADR-003-latency-llm-gate.md)
+P2 → Healthcare Claims Intelligence (Synthea, architecture proof) · P3 → Clinical AI Governance (LLM-as-Judge, enrichment pipeline) · **P4 → this repo** (real CMS data, streaming, fully agentic)

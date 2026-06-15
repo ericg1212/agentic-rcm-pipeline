@@ -18,27 +18,12 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.13"
-          cache: pip
       - run: pip install ruff bandit
-      - name: ruff
-        run: ruff check src/ tests/
-      - name: bandit
-        run: bandit -r src/ -ll -x src/reasoning,src/action,src/feedback
-
-  pip-audit:
-    name: CVE Scan
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with:
-          python-version: "3.13"
-          cache: pip
-      - run: pip install pip-audit
-      - run: pip-audit -r requirements.txt --ignore-vuln PYSEC-2022-42969
+      - run: ruff check src/ tests/
+      - run: bandit -r src/ -ll
 
   test:
-    name: Tests
+    name: Tests & CVE Scan
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -46,9 +31,13 @@ jobs:
         with:
           python-version: "3.13"
           cache: pip
-      - run: pip install numpy pandas python-dotenv structlog confluent-kafka fastavro pytest pytest-cov
+      - name: Install dependencies
+        run: pip install numpy pandas python-dotenv structlog confluent-kafka fastavro pytest pytest-cov pip-audit
       - name: pytest
         run: pytest tests/ -v --cov=src --cov-report=xml
+      - name: pip-audit
+        # Audit the installed environment — avoids build-from-source failures on sdist-only packages
+        run: pip-audit
       - uses: codecov/codecov-action@v4
         with:
           file: coverage.xml
