@@ -1,0 +1,57 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+dist/
+build/
+.eggs/
+*.egg
+.venv/
+venv/
+env/
+
+# Environment
+.env
+.env.local
+*.env
+
+# Data files (download locally, never commit)
+data/provider_utilization/*.csv
+data/provider_utilization/*.parquet
+data/ncci/*.csv
+data/ncci/*.zip
+!data/ncci/seed_ptp.csv
+!data/ncci/seed_mue.csv
+!data/carc/carc_rarc_enum.json
+
+# dbt
+dbt/target/
+dbt/dbt_packages/
+dbt/logs/
+dbt/.user.yml
+
+# Snowflake
+*.p8
+snowflake/connector/connector_config.json
+
+# Logs
+*.log
+logs/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Testing
+.pytest_cache/
+htmlcov/
+.coverage
+coverage.xml
+
+# Great Expectations
+great_expectations/uncommitted/
