@@ -1,0 +1,35 @@
+name: Bug Report
+description: Something is broken
+labels: ["bug"]
+body:
+  - type: dropdown
+    id: layer
+    attributes:
+      label: Layer
+      options:
+        - L1 — Kafka / Generator / NCCI Gate
+        - L2 — Claude API / Reasoning
+        - L3 — Action / Autonomy
+        - L4 — Feedback Loop
+        - Snowflake / dbt
+        - Infra / Docker
+    validations:
+      required: true
+  - type: textarea
+    id: description
+    attributes:
+      label: What happened?
+      placeholder: Describe the bug and expected behavior
+    validations:
+      required: true
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: Steps to reproduce
+    validations:
+      required: true
+  - type: input
+    id: ncci-version
+    attributes:
+      label: NCCI edit version in effect (if applicable)
+      placeholder: e.g. 2026Q3

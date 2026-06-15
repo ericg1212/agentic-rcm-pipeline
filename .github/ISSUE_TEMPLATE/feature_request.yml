@@ -1,0 +1,30 @@
+name: Feature Request
+description: Propose a new capability
+labels: ["enhancement"]
+body:
+  - type: dropdown
+    id: phase
+    attributes:
+      label: Target phase
+      options:
+        - Phase 1 — Core Prevention Loop
+        - Phase 2 — Adaptive Intelligence (RAG)
+        - Phase 3 — Production Scale
+    validations:
+      required: true
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem this solves
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed solution
+    validations:
+      required: true
+  - type: textarea
+    id: rejected
+    attributes:
+      label: Alternatives considered and why rejected
