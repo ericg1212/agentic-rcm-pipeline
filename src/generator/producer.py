@@ -6,7 +6,6 @@ applies the correct rule version consistently for each payer's claim stream.
 """
 from __future__ import annotations
 
-import json
 import signal
 import sys
 from pathlib import Path
@@ -15,8 +14,8 @@ import structlog
 from confluent_kafka import KafkaException
 from confluent_kafka.avro import AvroProducer
 
-from src.config.settings import DataConfig, GeneratorConfig, KafkaConfig
-from src.generator.claim_generator import ClaimEvent, ClaimGenerator
+from src.config.settings import GeneratorConfig, KafkaConfig
+from src.generator.claim_generator import ClaimGenerator
 
 log = structlog.get_logger(__name__)
 
@@ -55,7 +54,6 @@ def run_producer(
 ) -> None:
     generator = ClaimGenerator()
     producer = _build_producer()
-    schema = json.loads(_load_schema())
     topic = KafkaConfig.TOPIC_CLAIMS_RAW
 
     count = 0
