@@ -7,7 +7,7 @@ anthropic==0.31.0
 
 # Data
 pandas==2.2.2
-numpy==1.26.4
+numpy==2.4.6
 pyarrow==16.1.0
 
 # Snowflake
