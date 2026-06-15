@@ -22,12 +22,11 @@ from __future__ import annotations
 import json
 import signal
 import sys
-import time
 from collections import OrderedDict
 from dataclasses import dataclass
 
 import structlog
-from confluent_kafka import Consumer, KafkaError, KafkaException, Producer
+from confluent_kafka import KafkaError, KafkaException, Producer
 from confluent_kafka.avro import AvroConsumer
 from confluent_kafka.avro.serializer import SerializerError
 

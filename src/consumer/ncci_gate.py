@@ -25,14 +25,13 @@ from __future__ import annotations
 
 import csv
 import enum
-import json
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import NamedTuple
 
 import structlog
 
-from src.config.settings import DataConfig, GateConfig
+from src.config.settings import DataConfig
 
 log = structlog.get_logger(__name__)
 

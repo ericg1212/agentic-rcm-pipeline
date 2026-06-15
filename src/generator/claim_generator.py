@@ -9,10 +9,9 @@ Design decisions documented in ADR-002 (data/ground-truth).
 """
 from __future__ import annotations
 
-import random
 import time
 import uuid
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from datetime import date, datetime, timedelta, timezone
 
 import numpy as np
