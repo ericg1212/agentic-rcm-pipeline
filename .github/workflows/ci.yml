@@ -49,7 +49,7 @@ jobs:
       - run: pip install numpy pandas python-dotenv structlog confluent-kafka fastavro pytest pytest-cov
       - name: pytest
         run: pytest tests/ -v --cov=src --cov-report=xml
-      - uses: codecov/codecov-action@v4
+      - uses: codecov/codecov-action@v7
         with:
           file: coverage.xml
           fail_ci_if_error: false
