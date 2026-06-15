@@ -12,7 +12,7 @@ pyarrow==16.1.0
 
 # Snowflake
 snowflake-connector-python[pandas]==3.11.0
-snowflake-sqlalchemy==1.6.1
+snowflake-sqlalchemy==1.10.1
 
 # Quality
 great-expectations==0.18.19
