@@ -1,10 +1,11 @@
-# Agentic RCM Pre-Submission Prevention Pipeline
+# Cleared: Agentic RCM Pre-Submission Prevention Pipeline
 
 [![CI](https://github.com/ericg1212/agentic-rcm-pipeline/actions/workflows/ci.yml/badge.svg)](https://github.com/ericg1212/agentic-rcm-pipeline/actions/workflows/ci.yml)
 [![codecov](https://codecov.io/gh/ericg1212/agentic-rcm-pipeline/branch/master/graph/badge.svg)](https://codecov.io/gh/ericg1212/agentic-rcm-pipeline)
 [![Python 3.13](https://img.shields.io/badge/python-3.13-blue.svg)](https://www.python.org/downloads/)
 [![Kafka](https://img.shields.io/badge/kafka-3.8.0_KRaft-231F20?logo=apache-kafka&logoColor=white)](https://kafka.apache.org/)
 [![Snowflake](https://img.shields.io/badge/snowflake-warehouse-29B5E8?logo=snowflake&logoColor=white)](https://snowflake.com)
+[![dbt](https://img.shields.io/badge/dbt-staging%20%2B%20mart-FF694B?logo=dbt&logoColor=white)](https://www.getdbt.com/)
 [![Claude API](https://img.shields.io/badge/claude-sonnet--4--6-5A67D8)](https://anthropic.com)
 
 **Healthcare denials cost U.S. providers $262B annually in rework, resubmission, and write-offs.** This pipeline intercepts claims in seconds — before they leave the practice — scores each against real NCCI edits and Medicare coverage policy using Claude API tool-use, and autonomously corrects or routes the ones that would be denied. Every action cites the governing rule in an immutable audit log. Prevention impact is measured, not estimated: a 10% holdout control arm makes the clean-claim-rate lift provable.
