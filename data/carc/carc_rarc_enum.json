@@ -1,0 +1,40 @@
+{
+  "version": "X12 CARC/RARC — WPC published list, relevant to NCCI/LCD/NCD denial reasoning",
+  "carc": {
+    "CO-4":  "Inconsistent modifier or modifier/procedure code combination",
+    "CO-11": "Diagnosis inconsistent with the procedure",
+    "CO-15": "Payment adjusted because authorization or precertification was missing",
+    "CO-16": "Claim/service lacks information which is needed for adjudication",
+    "CO-22": "This care may be covered by another payer per coordination of benefits",
+    "CO-29": "Time limit for filing has expired",
+    "CO-45": "Charges exceed your contracted/legislated fee arrangement",
+    "CO-50": "Non-covered services — not deemed a medical necessity",
+    "CO-57": "Payment denied/reduced because the payer deems the information submitted does not support this level of service",
+    "CO-96": "Non-covered charge(s)",
+    "CO-97": "Payment is included in the allowance for another service/procedure that has already been adjudicated",
+    "CO-109": "Claim/service not covered by this payer/contractor; you must send the claim/service to the correct payer/contractor",
+    "CO-119": "Benefit maximum for this time period has been reached",
+    "CO-167": "This (these) diagnosis(es) is (are) not covered; additional information is needed",
+    "CO-170": "Payment is denied when performed/billed by this type of provider",
+    "CO-236": "This procedure or procedure/modifier combination is not compatible with another procedure or procedure/modifier combination provided on the same day according to the National Correct Coding Initiative or workers compensation state regulations/fee schedule"
+  },
+  "rarc": {
+    "N56":  "Missing or incomplete note from referring physician",
+    "N109": "Alert: Not covered unless the patient is in a medical necessity qualifying stay",
+    "N115": "This decision was based on a Local Coverage Determination (LCD)",
+    "N130": "Consult plan benefit documents or the member's summary plan description for information about this benefit",
+    "N342": "Alert: The provider acting as a health plan should fill out this claim form",
+    "N381": "Alert: Alert: This response is based on the submitted procedure code",
+    "N519": "Invalid combination of HCPCS modifiers",
+    "N520": "Alert: Payment made based on a jurisdiction cost-to-charge ratio",
+    "N522": "Procedure code and modifier are inconsistent with each other",
+    "N600": "Alert: Consult the NCCI guidelines for correct coding of this service"
+  },
+  "ncci_bypass_modifiers": {
+    "59":  "Distinct procedural service",
+    "XE":  "Separate encounter",
+    "XS":  "Separate structure",
+    "XP":  "Separate practitioner",
+    "XU":  "Unusual non-overlapping service"
+  }
+}

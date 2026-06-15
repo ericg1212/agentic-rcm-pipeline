@@ -1,0 +1,29 @@
+col1_code,col2_code,modifier_indicator,effective_date,deletion_date,notes
+# NCCI PTP Seed File — bootstrap pairs for dev/testing
+# Source: CMS NCCI Practitioner PTP Edits (quarterly CSV).
+# Download real file: https://www.cms.gov/medicare/coding-billing/national-correct-coding-initiative-ncci-edits/ncci-edits-files
+# modifier_indicator: 0=no bypass allowed, 1=bypass with appropriate modifier (59/XE/XS/XP/XU), 9=deleted
+#
+# Column 1 code = comprehensive code; Column 2 = component (cannot bill both without modifier)
+93000,93005,0,20260101,,ECG with interp bundles tracing component
+93000,93010,0,20260101,,ECG with interp bundles tracing-only component
+99213,99211,0,20260101,,E&M established bundles nurse visit same day
+99214,99211,0,20260101,,E&M established bundles nurse visit same day
+99215,99211,0,20260101,,E&M established bundles nurse visit same day
+27447,27446,0,20260101,,Total knee bundles partial knee arthroplasty
+43239,43235,0,20260101,,Upper endoscopy with biopsy bundles diagnostic-only
+43239,43236,0,20260101,,Upper endoscopy with biopsy bundles injection
+43239,43237,0,20260101,,Upper endoscopy with biopsy bundles ultrasound
+36415,99213,0,20260101,,Routine venipuncture bundled into E&M
+36415,99214,0,20260101,,Routine venipuncture bundled into E&M
+36415,99215,0,20260101,,Routine venipuncture bundled into E&M
+20610,99213,1,20260101,,Joint aspiration may be separately reportable with modifier 59/XS
+20610,99214,1,20260101,,Joint aspiration may be separately reportable with modifier 59/XS
+20610,99215,1,20260101,,Joint aspiration may be separately reportable with modifier 59/XS
+29827,29806,0,20260101,,Rotator cuff repair bundles labrum repair same shoulder
+29827,29819,0,20260101,,Rotator cuff repair bundles loose body removal
+29827,29823,0,20260101,,Rotator cuff repair bundles extensive debridement
+11042,97597,1,20260101,,Debridement codes: separate encounter allows bypass
+11043,97597,1,20260101,,Debridement codes: separate encounter allows bypass
+90837,90832,0,20260101,,60-min psychotherapy bundles 30-min add-on
+90837,90834,0,20260101,,60-min psychotherapy bundles 45-min add-on

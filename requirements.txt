@@ -1,0 +1,44 @@
+# Streaming
+confluent-kafka[avro]==2.5.0
+fastavro==1.9.4
+
+# LLM
+anthropic==0.31.0
+
+# Data
+pandas==2.2.2
+numpy==1.26.4
+pyarrow==16.1.0
+
+# Snowflake
+snowflake-connector-python[pandas]==3.11.0
+snowflake-sqlalchemy==1.6.1
+
+# Quality
+great-expectations==0.18.19
+
+# Dashboard
+streamlit==1.36.0
+plotly==5.22.0
+
+# Config
+python-dotenv==1.0.1
+pydantic==2.7.4
+pydantic-settings==2.3.4
+
+# HTTP
+requests==2.32.3
+httpx==0.27.0
+
+# Utilities
+tenacity==8.4.1
+structlog==24.2.0
+uuid6==2024.1.12
+
+# Dev / test
+pytest==8.2.2
+pytest-asyncio==0.23.7
+pytest-cov==5.0.0
+ruff==0.5.0
+bandit==1.7.9
+pip-audit==2.7.3

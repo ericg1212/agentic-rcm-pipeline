@@ -1,0 +1,83 @@
+{
+  "type": "record",
+  "name": "ClaimEvent",
+  "namespace": "com.rcm.prevention.v1",
+  "doc": "Pre-submission claim event emitted by the live generator",
+  "fields": [
+    {
+      "name": "claim_id",
+      "type": "string",
+      "doc": "UUID v7 — monotonically increasing, sortable by arrival time"
+    },
+    {
+      "name": "event_time",
+      "type": {"type": "long", "logicalType": "timestamp-millis"},
+      "doc": "Wall-clock time the claim event was generated (epoch ms)"
+    },
+    {
+      "name": "service_date",
+      "type": "string",
+      "doc": "ISO-8601 date of service (YYYY-MM-DD)"
+    },
+    {
+      "name": "provider_npi",
+      "type": "string",
+      "doc": "10-digit NPI from real CMS Provider Utilization NPI set"
+    },
+    {
+      "name": "payer_id",
+      "type": "string",
+      "doc": "Payer identifier — used as Kafka partition key for per-payer ordering"
+    },
+    {
+      "name": "claim_type",
+      "type": {
+        "type": "enum",
+        "name": "ClaimType",
+        "symbols": ["professional", "institutional"],
+        "doc": "CMS-1500 (professional) vs UB-04 (institutional)"
+      }
+    },
+    {
+      "name": "place_of_service",
+      "type": "string",
+      "doc": "2-digit CMS Place of Service code (e.g., 11=office, 21=inpatient)"
+    },
+    {
+      "name": "procedure_codes",
+      "type": {"type": "array", "items": "string"},
+      "doc": "HCPCS/CPT codes billed on this claim line"
+    },
+    {
+      "name": "diagnosis_codes",
+      "type": {"type": "array", "items": "string"},
+      "doc": "ICD-10-CM diagnosis codes (primary first)"
+    },
+    {
+      "name": "modifiers",
+      "type": {"type": "array", "items": "string"},
+      "doc": "2-character modifier codes applied to the primary procedure"
+    },
+    {
+      "name": "units",
+      "type": "int",
+      "doc": "Units of service billed"
+    },
+    {
+      "name": "submitted_charge",
+      "type": "string",
+      "doc": "Submitted charge amount as decimal string (avoids float precision issues)"
+    },
+    {
+      "name": "ncci_edit_version",
+      "type": "string",
+      "doc": "NCCI quarterly edition in effect at generation time (e.g., '2026Q3')"
+    },
+    {
+      "name": "is_holdout",
+      "type": "boolean",
+      "default": false,
+      "doc": "True for control-arm claims — routed without LLM intervention for holdout proof"
+    }
+  ]
+}

@@ -1,0 +1,101 @@
+services:
+  kafka:
+    image: apache/kafka:3.8.0
+    container_name: rcm-kafka
+    ports:
+      - "9092:9092"
+      - "9093:9093"
+      - "9094:9094"
+    environment:
+      KAFKA_NODE_ID: 1
+      KAFKA_PROCESS_ROLES: broker,controller
+      KAFKA_CONTROLLER_QUORUM_VOTERS: "1@kafka:9093"
+      # PLAINTEXT = host connections (localhost:9092)
+      # INTERNAL  = docker-network connections (kafka:9094) for schema-registry, kafka-init
+      # CONTROLLER = KRaft controller (kafka:9093)
+      KAFKA_LISTENERS: "PLAINTEXT://0.0.0.0:9092,CONTROLLER://0.0.0.0:9093,INTERNAL://0.0.0.0:9094"
+      KAFKA_ADVERTISED_LISTENERS: "PLAINTEXT://localhost:9092,INTERNAL://kafka:9094"
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: "PLAINTEXT:PLAINTEXT,CONTROLLER:PLAINTEXT,INTERNAL:PLAINTEXT"
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_INTER_BROKER_LISTENER_NAME: INTERNAL
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "false"
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_LOG_RETENTION_HOURS: 168
+      CLUSTER_ID: "MkU3OEVBNTcwNTJENDM2Qk"
+    volumes:
+      - kafka_data:/var/lib/kafka/data
+    healthcheck:
+      test: ["CMD", "/opt/kafka/bin/kafka-broker-api-versions.sh", "--bootstrap-server", "localhost:9092"]
+      interval: 15s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+
+  schema-registry:
+    image: confluentinc/cp-schema-registry:7.6.0
+    container_name: rcm-schema-registry
+    depends_on:
+      kafka:
+        condition: service_healthy
+    ports:
+      - "8081:8081"
+    environment:
+      SCHEMA_REGISTRY_HOST_NAME: schema-registry
+      # Schema registry connects via internal listener
+      SCHEMA_REGISTRY_KAFKASTORE_BOOTSTRAP_SERVERS: "kafka:9094"
+      SCHEMA_REGISTRY_LISTENERS: "http://0.0.0.0:8081"
+      SCHEMA_REGISTRY_KAFKASTORE_TOPIC_REPLICATION_FACTOR: 1
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8081/subjects"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+
+  kafka-init:
+    image: apache/kafka:3.8.0
+    container_name: rcm-kafka-init
+    depends_on:
+      kafka:
+        condition: service_healthy
+    entrypoint: ["/bin/bash", "-c"]
+    command:
+      - |
+        /opt/kafka/bin/kafka-topics.sh --bootstrap-server kafka:9094 --create --if-not-exists \
+          --topic claims.raw --partitions 6 --replication-factor 1 \
+          --config retention.ms=604800000 && \
+        /opt/kafka/bin/kafka-topics.sh --bootstrap-server kafka:9094 --create --if-not-exists \
+          --topic claims.scored --partitions 6 --replication-factor 1 \
+          --config retention.ms=604800000 && \
+        /opt/kafka/bin/kafka-topics.sh --bootstrap-server kafka:9094 --create --if-not-exists \
+          --topic claims.actions --partitions 6 --replication-factor 1 \
+          --config retention.ms=604800000 && \
+        /opt/kafka/bin/kafka-topics.sh --bootstrap-server kafka:9094 --create --if-not-exists \
+          --topic adjudications.outcomes --partitions 6 --replication-factor 1 \
+          --config retention.ms=2592000000 && \
+        /opt/kafka/bin/kafka-topics.sh --bootstrap-server kafka:9094 --create --if-not-exists \
+          --topic rules.control --partitions 1 --replication-factor 1 \
+          --config cleanup.policy=compact && \
+        /opt/kafka/bin/kafka-topics.sh --bootstrap-server kafka:9094 --create --if-not-exists \
+          --topic claims.dlq --partitions 3 --replication-factor 1 \
+          --config retention.ms=2592000000 && \
+        echo "All 6 topics created."
+    restart: "no"
+
+  kafka-ui:
+    image: provectuslabs/kafka-ui:latest
+    container_name: rcm-kafka-ui
+    depends_on:
+      kafka:
+        condition: service_healthy
+    ports:
+      - "8080:8080"
+    environment:
+      KAFKA_CLUSTERS_0_NAME: rcm-prevention
+      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: "kafka:9094"
+      DYNAMIC_CONFIG_ENABLED: "true"
+
+volumes:
+  kafka_data:

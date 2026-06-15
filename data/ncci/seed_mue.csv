@@ -1,0 +1,19 @@
+hcpcs_code,mue_value,mue_adjudication_indicator,effective_date,notes
+# NCCI MUE Seed File — Medically Unlikely Edits for dev/testing
+# Source: CMS NCCI MUE Practitioner Services (quarterly CSV).
+# Download real file: https://www.cms.gov/medicare/coding-billing/national-correct-coding-initiative-ncci-edits/ncci-edits-files
+# mue_adjudication_indicator: 1=line, 2=date of service, 3=date of service (claim level)
+# Units submitted > mue_value on same date = CO-97 denial
+99213,1,2,20260101,E&M established moderate — 1 unit per DOS max
+99214,1,2,20260101,E&M established moderate-high — 1 unit per DOS max
+99215,1,2,20260101,E&M established high — 1 unit per DOS max
+93000,1,2,20260101,ECG with interpretation — 1 per DOS
+27447,1,2,20260101,Total knee arthroplasty — 1 per DOS (bilateral uses modifier 50)
+43239,1,2,20260101,Upper GI endoscopy with biopsy — 1 per DOS
+36415,3,1,20260101,Routine venipuncture — 3 per line (separate sticks)
+20610,3,1,20260101,Joint aspiration/injection — 3 per line (separate joints)
+85025,1,2,20260101,CBC with differential — 1 per DOS
+80053,1,2,20260101,Comprehensive metabolic panel — 1 per DOS
+29827,1,2,20260101,Arthroscopy shoulder rotator cuff repair — 1 per DOS
+90837,1,2,20260101,60-min psychotherapy — 1 per DOS
+11042,1,3,20260101,Debridement skin/subcut per wound — 1 per wound per DOS
