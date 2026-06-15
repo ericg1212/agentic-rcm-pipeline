@@ -38,9 +38,7 @@ jobs:
       - name: pip-audit
         # Audit the installed environment — avoids build-from-source failures on sdist-only packages
         run: pip-audit
-      - uses: codecov/codecov-action@v4
+      - uses: codecov/codecov-action@v3
         with:
           file: coverage.xml
           fail_ci_if_error: false
-        env:
-          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
