@@ -24,8 +24,3 @@ The deterministic gate is the cost and latency defense: "I don't call the LLM on
 | **Micro-batch (Dagster scheduled run)** | Loses the pre-submission intervention window. A claim in a batch run at T+5 minutes may have already been submitted and adjudicated |
 | **Pre-score with XGBoost, skip NCCI gate** | Right call at Phase 3 production scale (100K+ claims/day). Premature for MVP: adds ML training infrastructure without interview story clarity. The NCCI gate is a deterministic first-principles check; XGBoost is a learned approximation. Both have a role — NCCI catches what's definitively wrong, XGBoost triage would optimize LLM call routing at scale |
 
-## Interview L1/L2/L3
-
-**L1:** "Every claim runs through a deterministic NCCI check in under a millisecond. Only the ambiguous ones — maybe 15% of volume — ever call the LLM. That's the cost and latency defense."  
-**L2:** "The gate produces three routes: PASS (clear, no action), HARD_FAIL (deterministic violation, no modifier bypass), and AMBIGUOUS (modifier present, modifier_indicator=1, LLM must verify clinical appropriateness). PASS and HARD_FAIL never hit the LLM API. Only AMBIGUOUS — and HARD_FAIL on high-dollar claims that need rationale — do."  
-**L3:** "At production scale I'd replace the AMBIGUOUS routing with an XGBoost binary triage trained on historical gate+LLM outcomes. XGBoost handles the volume cheaply; LLM is called only on medium/high XGBoost-scored claims. That's Phase 3. For v1, the NCCI gate alone reduces LLM calls by 85% and is fully defensible."

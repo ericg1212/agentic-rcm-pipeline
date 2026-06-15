@@ -24,6 +24,3 @@ The resolution: **realness lives in the policy and distributions, not the rows**
 | **2023 CMS Synthetic RIF** | Generated using Synthea — explicitly violates the no-Synthea constraint (P2 and P3 already used Synthea; P4's differentiator is breaking from synthetic data). Using the CMS Synthetic RIF erodes the entire P2→P3→P4 portfolio arc narrative |
 | **Real DUA-gated claim file** | Right answer for a production system; not feasible for a public portfolio project (weeks of lead time, institutional affiliation required, data can't be committed to GitHub). Would also prevent sharing or demonstrating the project |
 
-## Interview Framing
-
-"P4 doesn't invent denial rules — it scores against NCCI edits and Medicare coverage determinations, the same rule sets that adjudicate real Medicare claims, calibrated to real Transparency-in-Coverage denial rates. Beneficiary-level claims aren't public anywhere, so claim volume is generated from real CMS distributions. But every denial traces to real policy. That's the honest framing — and it's actually the stronger story than 'I downloaded a CSV,' because it means the system works against the underlying rules, not a static dataset."
