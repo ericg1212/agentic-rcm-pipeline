@@ -24,7 +24,7 @@ Denied classified denials retrospectively. Trust but Verify adds AI governance. 
 
 ---
 
-**Healthcare denials cost U.S. providers $262B annually in rework, resubmission, and write-offs.** This pipeline intercepts claims in real time — before they leave the practice — and prevents the two largest denial root causes: NCCI coding violations and prior authorization gaps. Every claim is scored against real NCCI edits and RAG-retrieved payer authorization criteria using Claude API tool-use. The system autonomously corrects, flags, or escalates — each action citing the governing rule in an immutable audit log. Prevention impact is measured, not estimated: a 10% holdout control arm makes the clean-claim-rate lift provable.
+**Claim denials are one of healthcare's largest preventable revenue leaks, costing U.S. providers well over $100B a year in rework and write-offs.** This pipeline intercepts claims in real time — before they leave the practice — and prevents the two largest denial root causes: NCCI coding violations and prior authorization gaps. Every claim is scored against real NCCI edits and RAG-retrieved payer authorization criteria using Claude API tool-use. The system autonomously corrects, flags, or escalates — each action citing the governing rule in an immutable audit log. Prevention impact is measured, not estimated: a 10% holdout control arm makes the clean-claim-rate lift provable.
 
 ---
 
@@ -51,7 +51,7 @@ flowchart LR
 ```
 
 **Layer 1 delivers:**
-- Live stochastic generator sampling real 2024 CMS Provider Utilization distributions — immune to "you're just replaying a CSV"
+- Live stochastic generator sampling real 2024 CMS Provider Utilization distributions
 - Deterministic NCCI PTP + MUE gate with three-route decision: `PASS` / `HARD_FAIL` / `AMBIGUOUS` — ~85% of claims never touch the LLM
 - Compacted `rules.control` topic: NCCI quarterly editions hot-swapped without consumer downtime
 - 10% holdout stamped at the source (`is_holdout` in Avro schema) — control arm for provable ROI
