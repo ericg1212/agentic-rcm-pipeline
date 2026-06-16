@@ -76,16 +76,16 @@ flowchart LR
 
 ## Data Strategy
 
-No PHI, no beneficiary-level data, no DUA. Every claim event composes from **real CMS distributions, real provider NPIs, and real NCCI adjudication rules**:
+Every claim event composes from **CMS distributions, provider NPIs, and NCCI adjudication rules** — aggregate Medicare data only, no PHI:
 
 | Element | Source |
 |---|---|
-| Claim substrate | CMS Medicare Physician & Other Practitioners 2024 — HCPCS frequencies, charge distributions, real NPIs |
+| Claim substrate | CMS Medicare Physician & Other Practitioners 2024 — HCPCS frequencies, charge distributions, provider NPIs |
 | Denial logic | NCCI PTP + MUE edits, 2026 Q3 quarterly CSV |
 | Denial codes | X12/WPC CARC/RARC canonical enum |
 | Denial rate baseline | CMS Transparency in Coverage PUF |
 
-The generator composes novel claim events from these real distributions. Every denial traces to a real Medicare adjudication rule.
+The generator composes novel claim events from these distributions — every denial still traces back to an actual Medicare adjudication rule.
 
 ---
 
