@@ -8,6 +8,22 @@
 [![dbt](https://img.shields.io/badge/dbt-planned_L2-FF694B?logo=dbt&logoColor=white)](https://www.getdbt.com/)
 [![Claude API](https://img.shields.io/badge/claude-sonnet--4--6-5A67D8)](https://anthropic.com)
 
+**By [Eric Grynspan](https://www.linkedin.com/in/ericgrynspan/)** &nbsp;·&nbsp; [Portfolio](https://ericg1212.github.io) &nbsp;·&nbsp; [← Trust but Verify](https://github.com/ericg1212/ai-healthcare-pipeline)
+
+---
+
+## Portfolio Arc
+
+Denied classified denials retrospectively. Trust but Verify adds AI governance. Cleared prevents the denial before it happens.
+
+| Pipeline | Focus | Status |
+|---|---|---|
+| [Denied](https://github.com/ericg1212/healthcare-claims-pipeline) | Retrospective denial classification — separate 27K systematic denials with an upstream fix from 229K documentation failures requiring a different intervention | Live |
+| [Trust but Verify](https://github.com/ericg1212/ai-healthcare-pipeline) | Clinical AI governance — LLM enrichment + rules engine cross-validation, every routing decision explainable | Live |
+| **[Cleared *(this project)*](https://github.com/ericg1212/agentic-rcm-pipeline)** | Real-time prior auth prevention — RAG-enhanced payer criteria matching at point of submission, streaming ingestion | Live — Layer 1 |
+
+---
+
 **Healthcare denials cost U.S. providers $262B annually in rework, resubmission, and write-offs.** This pipeline intercepts claims in real time — before they leave the practice — and prevents the two largest denial root causes: NCCI coding violations and prior authorization gaps. Every claim is scored against real NCCI edits and RAG-retrieved payer authorization criteria using Claude API tool-use. The system autonomously corrects, flags, or escalates — each action citing the governing rule in an immutable audit log. Prevention impact is measured, not estimated: a 10% holdout control arm makes the clean-claim-rate lift provable.
 
 ---
@@ -60,7 +76,7 @@ flowchart LR
 
 ## Data Strategy
 
-No PHI. No beneficiary-level data. No DUA required. Realness lives in the **policy and distributions**:
+No PHI, no beneficiary-level data, no DUA — and no invented numbers either. The claim events are synthetic; the **policy and distributions underneath are not**:
 
 | Element | Source | Real? |
 |---|---|---|
@@ -93,8 +109,3 @@ Download real NCCI quarterly CSVs from CMS and place in `data/ncci/`. Seed files
 - [ADR-002: Real distributions vs DE-SynPUF vs Synthea](docs/adrs/ADR-002-data-ground-truth.md)
 - [ADR-003: Latency model and LLM trigger gate](docs/adrs/ADR-003-latency-llm-gate.md)
 
----
-
-## Portfolio Arc
-
-P2 → Healthcare Claims Intelligence (Synthea, architecture proof) · P3 → Clinical AI Governance (LLM-as-Judge, enrichment pipeline) · **P4 → this repo** (real CMS data, streaming, fully agentic)
