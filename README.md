@@ -5,7 +5,7 @@
 [![Python 3.13](https://img.shields.io/badge/python-3.13-blue.svg)](https://www.python.org/downloads/)
 [![Kafka](https://img.shields.io/badge/kafka-3.8.0_KRaft-231F20?logo=apache-kafka&logoColor=white)](https://kafka.apache.org/)
 [![Snowflake](https://img.shields.io/badge/snowflake-warehouse-29B5E8?logo=snowflake&logoColor=white)](https://snowflake.com)
-[![dbt](https://img.shields.io/badge/dbt-staging%20%2B%20mart-FF694B?logo=dbt&logoColor=white)](https://www.getdbt.com/)
+[![dbt](https://img.shields.io/badge/dbt-planned_L2-FF694B?logo=dbt&logoColor=white)](https://www.getdbt.com/)
 [![Claude API](https://img.shields.io/badge/claude-sonnet--4--6-5A67D8)](https://anthropic.com)
 
 **Healthcare denials cost U.S. providers $262B annually in rework, resubmission, and write-offs.** This pipeline intercepts claims in real time — before they leave the practice — and prevents the two largest denial root causes: NCCI coding violations and prior authorization gaps. Every claim is scored against real NCCI edits and RAG-retrieved payer authorization criteria using Claude API tool-use. The system autonomously corrects, flags, or escalates — each action citing the governing rule in an immutable audit log. Prevention impact is measured, not estimated: a 10% holdout control arm makes the clean-claim-rate lift provable.
