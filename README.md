@@ -76,7 +76,7 @@ flowchart LR
 
 ## Data Strategy
 
-No PHI, no beneficiary-level data, no DUA — and no invented numbers either. The claim events are synthetic; the **policy and distributions underneath are not**:
+No PHI, no beneficiary-level data, no DUA. Every claim event composes from **real CMS distributions, real provider NPIs, and real NCCI adjudication rules**:
 
 | Element | Source | Real? |
 |---|---|---|
@@ -85,7 +85,7 @@ No PHI, no beneficiary-level data, no DUA — and no invented numbers either. Th
 | Denial codes | X12/WPC CARC/RARC canonical enum | ✓ |
 | Denial rate baseline | CMS Transparency in Coverage PUF | ✓ |
 
-The generator composes novel claim events from these real distributions — the only synthetic atom. Every denial traces to a real Medicare adjudication rule.
+The generator composes novel claim events from these real distributions. Every denial traces to a real Medicare adjudication rule.
 
 ---
 
