@@ -1,7 +1,7 @@
 .PHONY: help up down restart logs topics status producer consumer install lint test snowflake-init
 
 COMPOSE_FILE = infra/docker-compose.yml
-PYTHON = C:/Users/ericg/AppData/Local/Programs/Python/Python313/python.exe
+PYTHON ?= python
 
 help:
 	@echo "P4 Agentic RCM Prevention Pipeline"

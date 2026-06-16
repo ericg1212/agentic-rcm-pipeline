@@ -1,0 +1,29 @@
+# Layer 1 (Foundation) runtime + test dependencies only.
+#
+# requirements.txt declares the full system's dependencies (all 4 layers).
+# CI installs from THIS file instead, scoped to what Layer 1 actually imports.
+#
+# Floor constraints (>=), not exact pins: exact pins from when this project
+# was scaffolded predated Python 3.13 wheel availability for several of these
+# packages (confluent-kafka, fastavro, numpy all failed building from source
+# on cp313 before this fix). Floors let pip resolve to whatever current
+# version actually ships a wheel, instead of re-breaking on the next runner
+# image bump. Update this file (and ci.yml) as each new layer's imports land.
+
+# Streaming
+confluent-kafka[avro]>=2.6.0
+fastavro>=1.9.7
+
+# Data
+numpy>=2.1.0
+
+# Config
+python-dotenv>=1.0.0
+
+# Utilities
+structlog>=24.1.0
+
+# Dev / test
+pytest>=8.0.0
+pytest-cov>=5.0.0
+pip-audit>=2.7.0

@@ -32,7 +32,7 @@ jobs:
           python-version: "3.13"
           cache: pip
       - name: Install dependencies
-        run: pip install numpy pandas python-dotenv structlog confluent-kafka fastavro pytest pytest-cov pip-audit
+        run: pip install -r requirements-layer1.txt
       - name: pytest
         run: pytest tests/ -v --cov=src --cov-report=xml
       - name: pip-audit
