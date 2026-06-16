@@ -1,3 +1,11 @@
+# Full declared stack for the end-state system (all 4 layers). CI does NOT
+# install from this file -- see requirements-layer1.txt for what's actually
+# tested today. Known blocker for later layers: great-expectations==0.18.19
+# hard-pins numpy<2.0, which conflicts with pandas/pyarrow/snowflake-connector
+# needing numpy>=2.1 for Python 3.13 wheels. great-expectations 1.0+ supports
+# numpy 2.x but is a breaking API rewrite -- resolve deliberately when the
+# Quality layer is actually built, not as a side effect of a CI fix.
+
 # Streaming
 confluent-kafka[avro]==2.5.0
 fastavro==1.9.4
