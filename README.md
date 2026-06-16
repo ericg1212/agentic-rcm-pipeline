@@ -51,7 +51,7 @@ flowchart LR
 ```
 
 **Layer 1 delivers:**
-- Live stochastic generator sampling real 2024 CMS Provider Utilization distributions — immune to "you're just replaying a CSV"
+- Live stochastic generator sampling real 2024 CMS Provider Utilization distributions
 - Deterministic NCCI PTP + MUE gate with three-route decision: `PASS` / `HARD_FAIL` / `AMBIGUOUS` — ~85% of claims never touch the LLM
 - Compacted `rules.control` topic: NCCI quarterly editions hot-swapped without consumer downtime
 - 10% holdout stamped at the source (`is_holdout` in Avro schema) — control arm for provable ROI
