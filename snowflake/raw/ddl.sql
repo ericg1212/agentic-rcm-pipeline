@@ -1,3 +1,4 @@
+﻿-- Copyright (c) 2026 Eric Grynspan. All rights reserved.
 -- P4 Agentic RCM Prevention Pipeline — Snowflake RAW Schema DDL
 -- Account: gl20220 (AWS ca-central-1) | Warehouse: COMPUTE_WH (XS, auto-suspend 60s)
 -- All RAW tables are append-only event stores — no updates, no deletes.

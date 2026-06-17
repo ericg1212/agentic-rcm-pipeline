@@ -1,3 +1,4 @@
+﻿# Copyright (c) 2026 Eric Grynspan. All rights reserved.
 """
 Layer 1 — Deterministic NCCI Gate.
 

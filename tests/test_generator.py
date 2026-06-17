@@ -1,3 +1,4 @@
+﻿# Copyright (c) 2026 Eric Grynspan. All rights reserved.
 """Tests for the live claim generator — validates statistical properties and schema compliance."""
 import pytest
 

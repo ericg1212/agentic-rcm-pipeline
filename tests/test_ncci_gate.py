@@ -1,3 +1,4 @@
+﻿# Copyright (c) 2026 Eric Grynspan. All rights reserved.
 """Tests for the NCCI gate — validates routing logic against seed PTP and MUE tables."""
 import pytest
 
