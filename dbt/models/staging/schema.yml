@@ -1,0 +1,49 @@
+version: 2
+
+models:
+  - name: stg_claim_events
+    description: "Normalized claim events. One row per pre-submission claim."
+    columns:
+      - name: claim_id
+        tests: [unique, not_null]
+      - name: payer_id
+        tests: [not_null]
+      - name: claim_type
+        tests:
+          - accepted_values:
+              values: ["professional", "institutional"]
+      - name: submitted_charge_usd
+        tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              min_value: 0
+
+  - name: stg_llm_scoring_results
+    description: "Normalized LLM scoring results. One row per Claude API call."
+    columns:
+      - name: score_id
+        tests: [unique, not_null]
+      - name: claim_id
+        tests: [not_null]
+      - name: risk_score
+        tests:
+          - not_null
+          - dbt_utils.accepted_range:
+              min_value: 0
+              max_value: 100
+      - name: recommended_action
+        tests:
+          - accepted_values:
+              values: ["auto_correct", "flag", "hold", "escalate"]
+
+  - name: stg_gate_decisions
+    description: "Normalized NCCI gate decisions. One row per claim evaluated."
+    columns:
+      - name: decision_id
+        tests: [unique, not_null]
+      - name: claim_id
+        tests: [not_null]
+      - name: gate_route
+        tests:
+          - accepted_values:
+              values: ["pass", "hard_fail", "ambiguous"]

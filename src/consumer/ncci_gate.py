@@ -132,6 +132,14 @@ class NCCIGate:
             mue_codes=len(self._mue),
         )
 
+    def lookup_ptp(self, col1: str, col2: str) -> "PTPEdit | None":
+        """Return the PTPEdit for a code pair, or None if no edit exists."""
+        return self._ptp.get((col1, col2)) or self._ptp.get((col2, col1))
+
+    def lookup_mue(self, hcpcs_code: str) -> "MUEEdit | None":
+        """Return the MUEEdit for a code, or None if no limit is defined."""
+        return self._mue.get(hcpcs_code)
+
     def evaluate(self, claim: dict) -> GateDecision:
         """
         Evaluate a claim dict (from Avro-deserialized ClaimEvent) against NCCI rules.

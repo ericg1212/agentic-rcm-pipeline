@@ -1,0 +1,32 @@
+version: 2
+
+models:
+  - name: fct_claim_risk_scores
+    description: >
+      Keystone fact table joining every claim to its gate decision and LLM score.
+      Claims that never reached the LLM (PASS, holdout) have NULL llm_* columns.
+      The cohort column (holdout / intervention / deterministic) drives lift calculations.
+    columns:
+      - name: claim_id
+        tests: [unique, not_null]
+      - name: payer_id
+        tests: [not_null]
+      - name: gate_route
+        tests:
+          - accepted_values:
+              values: ["pass", "hard_fail", "ambiguous"]
+      - name: final_action
+        tests:
+          - not_null
+          - accepted_values:
+              values: ["pass", "auto_correct", "flag", "hold", "escalate", "deterministic"]
+      - name: cohort
+        tests:
+          - not_null
+          - accepted_values:
+              values: ["holdout", "intervention", "deterministic"]
+      - name: final_risk_score
+        tests:
+          - dbt_utils.accepted_range:
+              min_value: 0
+              max_value: 100

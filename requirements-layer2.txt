@@ -1,0 +1,29 @@
+# Layer 2 (Intelligence) runtime + test dependencies.
+# Extends layer 1. CI installs from this file starting with the Layer 2 build.
+#
+# Floor constraints (>=), not exact pins — same rationale as requirements-layer1.txt.
+# Update ci.yml to reference this file when Layer 2 tests land.
+
+# Streaming
+confluent-kafka[avro]>=2.6.0
+fastavro>=1.9.7
+
+# LLM — floor at 0.40.0 for claude-sonnet-4-6 support + stable tool_choice API
+anthropic>=0.40.0
+
+# Data
+numpy>=2.1.0
+pandas>=2.2.0
+
+# Config
+python-dotenv>=1.0.0
+pydantic>=2.9.0
+
+# Utilities
+structlog>=24.1.0
+tenacity>=8.4.0
+
+# Dev / test
+pytest>=8.0.0
+pytest-cov>=5.0.0
+pip-audit>=2.7.0

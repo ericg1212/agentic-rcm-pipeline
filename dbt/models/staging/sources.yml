@@ -1,0 +1,56 @@
+version: 2
+
+sources:
+  - name: raw
+    database: RCM_PREVENTION
+    schema: RAW
+    description: "Append-only event stores from the live pipeline. No updates or deletes."
+    tables:
+      - name: CLAIM_EVENTS
+        description: "Every pre-submission claim event from the live generator."
+        columns:
+          - name: CLAIM_ID
+            tests: [unique, not_null]
+          - name: EVENT_TIME
+            tests: [not_null]
+          - name: PAYER_ID
+            tests: [not_null]
+
+      - name: LLM_SCORING_RESULTS
+        description: "Immutable LLM audit log. Every Claude API call result."
+        columns:
+          - name: SCORE_ID
+            tests: [unique, not_null]
+          - name: CLAIM_ID
+            tests: [not_null]
+          - name: RISK_SCORE
+            tests:
+              - not_null
+              - accepted_range:
+                  min_value: 0
+                  max_value: 1
+
+      - name: GATE_DECISIONS
+        description: "NCCI gate routing decisions for every claim."
+        columns:
+          - name: DECISION_ID
+            tests: [unique, not_null]
+          - name: CLAIM_ID
+            tests: [not_null]
+          - name: GATE_ROUTE
+            tests:
+              - not_null
+              - accepted_values:
+                  values: ["pass", "hard_fail", "ambiguous"]
+
+      - name: ACTION_LOG
+        description: "Immutable autonomy audit log."
+        columns:
+          - name: ACTION_ID
+            tests: [unique, not_null]
+
+      - name: ADJUDICATION_OUTCOMES
+        description: "Post-adjudication feedback, delayed 30-90 days."
+        columns:
+          - name: OUTCOME_ID
+            tests: [unique, not_null]
