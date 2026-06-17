@@ -78,3 +78,12 @@ class DataConfig:
     PROVIDER_UTIL_DIR = ROOT / "data" / "provider_utilization"
     SEED_PTP_FILE = NCCI_DIR / "seed_ptp.csv"
     SEED_MUE_FILE = NCCI_DIR / "seed_mue.csv"
+
+
+class FeedbackConfig:
+    # Baseline window size for drift detection (first N outcomes establish reference rate)
+    DRIFT_BASELINE_WINDOW = int(os.getenv("DRIFT_BASELINE_WINDOW", "100"))
+    # Rolling window size for drift comparison (most recent N outcomes)
+    DRIFT_ROLLING_WINDOW = int(os.getenv("DRIFT_ROLLING_WINDOW", "50"))
+    # Relative change threshold that triggers the kill-switch (0.20 = 20% relative change)
+    DRIFT_THRESHOLD = float(os.getenv("DRIFT_THRESHOLD", "0.20"))
