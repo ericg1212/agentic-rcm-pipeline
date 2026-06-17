@@ -1,0 +1,14 @@
+rcm_prevention:
+  target: dev
+  outputs:
+    dev:
+      type: snowflake
+      account: "{{ env_var('SNOWFLAKE_ACCOUNT', 'gl20220') }}"
+      user: "{{ env_var('SNOWFLAKE_USER') }}"
+      password: "{{ env_var('SNOWFLAKE_PASSWORD') }}"
+      role: ACCOUNTADMIN
+      database: RCM_PREVENTION
+      warehouse: COMPUTE_WH
+      schema: STAGING
+      threads: 4
+      client_session_keep_alive: false

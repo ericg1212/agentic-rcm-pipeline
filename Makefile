@@ -1,4 +1,4 @@
-.PHONY: help up down restart logs topics status producer consumer install lint test snowflake-init
+.PHONY: help up down restart logs topics status producer consumer install lint test snowflake-init scorer eval dbt-run dbt-test
 
 COMPOSE_FILE = infra/docker-compose.yml
 PYTHON ?= python
@@ -56,6 +56,18 @@ lint:
 
 test:
 	$(PYTHON) -m pytest tests/ -v --cov=src --cov-report=term-missing
+
+scorer:
+	$(PYTHON) -m src.reasoning.scorer
+
+eval:
+	$(PYTHON) -c "from src.eval.noise_injection import run_noise_injection_eval; print('eval module loaded')"
+
+dbt-run:
+	cd dbt && dbt run --profiles-dir .
+
+dbt-test:
+	cd dbt && dbt test --profiles-dir .
 
 snowflake-init:
 	@echo "Run the DDL in Snowflake Worksheets:"
