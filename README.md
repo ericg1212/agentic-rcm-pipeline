@@ -37,7 +37,7 @@ flowchart LR
     N{"NCCI Gate\nPTP edits + MUE limits\ndeterministic · sub-ms"}
     CLR["Clearinghouse\n(PASS)"]
     SC[("claims.scored\n→ Layer 2 LLM")]
-    AC[("claims.actions\n→ Layer 3 Action")]
+    AC[("claims.actions\n→ Action Layer")]
     DLQ["DLQ\nschema violations"]
     RC[("rules.control\ncompacted topic\nNCI hot-swap")]
 
