@@ -10,7 +10,7 @@ from unittest.mock import MagicMock
 
 import pytest
 
-from src.consumer.ncci_gate import GateDecision, NCCIGate, Route
+from src.consumer.ncci_gate import NCCIGate, Route
 from src.eval.noise_injection import (
     LCD_RESTRICTED_PROCEDURES,
     LLM_RECOVERY_RISK_THRESHOLD,

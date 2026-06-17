@@ -7,8 +7,6 @@ and the full score() path with a canned LLM response.
 """
 from __future__ import annotations
 
-import json
-from datetime import datetime, timezone
 from unittest.mock import MagicMock, patch
 
 import pytest

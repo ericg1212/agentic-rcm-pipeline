@@ -4,14 +4,13 @@ Tests for Layer 3 — ActionRouter, KillSwitch, ImmutableAuditLog, corrections.
 from __future__ import annotations
 
 from datetime import datetime, timezone
-from unittest.mock import MagicMock
 
 import pytest
 
 from src.action.audit import AuditRecord, ImmutableAuditLog
 from src.action.corrections import attempt_modifier_correction
 from src.action.kill_switch import KillSwitch
-from src.action.router import ActionDecision, ActionRouter
+from src.action.router import ActionRouter
 from src.config.settings import ActionConfig
 from src.consumer.ncci_gate import GateDecision, NCCIGate, NCCIViolation, Route, ViolationType
 from src.reasoning.scorer import ScoringResult

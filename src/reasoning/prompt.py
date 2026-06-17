@@ -10,7 +10,7 @@ from __future__ import annotations
 
 import json
 
-from src.consumer.ncci_gate import GateDecision, Route
+from src.consumer.ncci_gate import GateDecision
 
 PROMPT_VERSION = "v1.0.0"
 

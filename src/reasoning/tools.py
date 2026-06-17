@@ -10,7 +10,6 @@ would query the mart layer's fct_prediction_vs_adjudication rolling aggregate.
 from __future__ import annotations
 
 import json
-from pathlib import Path
 
 import structlog
 
