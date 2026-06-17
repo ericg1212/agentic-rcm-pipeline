@@ -1,3 +1,4 @@
+﻿# Copyright (c) 2026 Eric Grynspan. All rights reserved.
 """
 Build P4_Interview_Drills.docx in Dropbox Interview Prep folder.
 Navy/bold-black scan-optimized structure. Colorblind-safe (no red/green).

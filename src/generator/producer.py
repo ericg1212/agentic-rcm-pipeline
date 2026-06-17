@@ -1,3 +1,4 @@
+﻿# Copyright (c) 2026 Eric Grynspan. All rights reserved.
 """
 Kafka Avro producer — serializes ClaimEvents to the claims.raw topic.
 

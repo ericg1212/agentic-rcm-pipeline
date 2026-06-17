@@ -1,3 +1,4 @@
+﻿# Copyright (c) 2026 Eric Grynspan. All rights reserved.
 """
 Tests for Layer 3 — ActionRouter, KillSwitch, ImmutableAuditLog, corrections.
 """

@@ -1,3 +1,4 @@
+﻿# Copyright (c) 2026 Eric Grynspan. All rights reserved.
 """
 Tests for Layer 4 — AdjudicationOutcomeStore, LiftCalculator, DriftMonitor,
 AdjudicationConsumer._parse.

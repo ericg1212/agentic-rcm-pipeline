@@ -1,3 +1,4 @@
+﻿# Copyright (c) 2026 Eric Grynspan. All rights reserved.
 """
 Layer 2 — System prompt and claim message builder for the Claude reasoning core.
 
