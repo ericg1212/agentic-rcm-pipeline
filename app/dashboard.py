@@ -32,6 +32,21 @@ from src.feedback.outcome_store import AdjudicationOutcomeStore, OutcomeRecord
 DEMO_MODE = os.getenv("DEMO_MODE", "true").lower() == "true"
 
 
+def _require_auth() -> None:
+    """Password gate — persists for the browser session once authenticated."""
+    if st.session_state.get("authenticated"):
+        return
+    st.markdown("## Agentic RCM Prevention Pipeline — Demo Access")
+    pwd = st.text_input("Demo password", type="password", key="auth_input")
+    if st.button("Enter"):
+        if pwd and pwd == st.secrets.get("DEMO_PASSWORD", ""):
+            st.session_state["authenticated"] = True
+            st.rerun()
+        else:
+            st.error("Incorrect password")
+    st.stop()
+
+
 # ---------------------------------------------------------------------------
 # Demo data factory
 # ---------------------------------------------------------------------------
@@ -98,6 +113,8 @@ def main() -> None:
         page_icon="🏥",
         layout="wide",
     )
+
+    _require_auth()
 
     store = _build_demo_store() if DEMO_MODE else AdjudicationOutcomeStore()
     audit_log = _build_demo_audit_log() if DEMO_MODE else ImmutableAuditLog()

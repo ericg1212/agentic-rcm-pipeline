@@ -29,6 +29,7 @@ dbt/target/
 dbt/dbt_packages/
 dbt/logs/
 dbt/.user.yml
+dbt/profiles.yml
 
 # Snowflake
 *.p8
@@ -55,3 +56,6 @@ coverage.xml
 
 # Great Expectations
 great_expectations/uncommitted/
+
+# Streamlit secrets (never commit — set in Streamlit Cloud UI)
+.streamlit/secrets.toml
