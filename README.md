@@ -115,4 +115,6 @@ Download real NCCI quarterly CSVs from CMS and place in `data/ncci/`. Seed files
 - [ADR-001: Kafka vs Kinesis vs micro-batch](docs/adrs/ADR-001-kafka-vs-alternatives.md)
 - [ADR-002: Real distributions vs DE-SynPUF vs Synthea](docs/adrs/ADR-002-data-ground-truth.md)
 - [ADR-003: Latency model and LLM trigger gate](docs/adrs/ADR-003-latency-llm-gate.md)
+- [ADR-004: Action routing — 3-condition auto-correct gate](docs/adrs/ADR-004-action-routing-thresholds.md)
+- [ADR-005: Drift window sizing and kill-switch threshold](docs/adrs/ADR-005-drift-window-sizing.md)
 
