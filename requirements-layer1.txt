@@ -25,5 +25,5 @@ structlog>=24.1.0
 
 # Dev / test
 pytest>=8.0.0
-pytest-cov>=5.0.0
+pytest-cov>=7.1.0
 pip-audit>=2.7.0
