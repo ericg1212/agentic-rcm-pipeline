@@ -20,7 +20,7 @@ Denied classified denials retrospectively. Trust but Verify adds AI governance. 
 |---|---|---|
 | [Denied](https://github.com/ericg1212/healthcare-claims-pipeline) | Retrospective denial classification — separate 27K systematic denials with an upstream fix from 229K documentation failures requiring a different intervention | Live |
 | [Trust but Verify](https://github.com/ericg1212/ai-healthcare-pipeline) | Clinical AI governance — LLM enrichment + rules engine cross-validation, every routing decision explainable | Live |
-| **[Cleared *(this project)*](https://github.com/ericg1212/agentic-rcm-pipeline)** | Real-time prior auth prevention — RAG-enhanced payer criteria matching at point of submission, streaming ingestion | Live — Layers 1–2 |
+| **[Cleared *(this project)*](https://github.com/ericg1212/agentic-rcm-pipeline)** | Real-time prior auth prevention — RAG-enhanced payer criteria matching at point of submission, streaming ingestion | Live |
 
 ---
 
@@ -28,18 +28,23 @@ Denied classified denials retrospectively. Trust but Verify adds AI governance. 
 
 ---
 
-## What's Built (Layers 1–2)
+## What's Built (Layers 1–4)
 
 ```mermaid
 flowchart LR
     G["Live Claim Generator\nreal CMS 2024 distributions\nPoisson arrival · 35% dirty injection"]
     K[("Kafka  claims.raw\n6 partitions · key=payer_id\nAvro + Schema Registry")]
     N{"NCCI Gate\nPTP edits + MUE limits\ndeterministic · sub-ms"}
-    CLR["Clearinghouse\n(PASS)"]
-    SC[("claims.scored\n→ Layer 2 LLM")]
-    AC[("claims.actions\n→ Action Layer")]
+    CLR["Clearinghouse\n(pass / corrected)"]
+    SC[("claims.scored\n→ Layer 2")]
+    AC[("claims.actions\n→ Layer 3")]
     DLQ["DLQ\nschema violations"]
     RC[("rules.control\ncompacted topic\nNCI hot-swap")]
+    AR{"Action Router\nholdout bypass · kill-switch\nescalate · auto-correct · flag"}
+    AUDIT[("Audit Log\nimmutable · rule_cited")]
+    HQ["Human Queue\nescalation draft + rationale"]
+    AO[("adjudications.outcomes\n← payer ERA/835")]
+    FB["Drift Monitor + Lift Calculator\nbaseline 100 · window 50\n>20% drift → kill-switch"]
 
     G -->|Avro| K
     RC -->|quarterly edition| N
@@ -48,6 +53,14 @@ flowchart LR
     N -->|ambiguous / high-value| SC
     N -->|hard fail| AC
     N -->|schema error| DLQ
+    SC -->|Claude tool-use| AC
+    AC --> AR
+    AR -->|pass · auto_correct| CLR
+    AR -->|escalate · flag| HQ
+    AR -.->|every action| AUDIT
+    CLR & HQ -.->|days/weeks later| AO
+    AO --> FB
+    FB -.->|breach| AR
 ```
 
 **Layer 1 — Foundation:**
@@ -63,6 +76,17 @@ flowchart LR
 - Noise injection eval: wrong-diagnosis dirty claims pass the deterministic gate; LLM recovers via `get_lcd_policy` — proves LLM lift
 - dbt staging (3 views) + `fct_claim_risk_scores` mart with holdout/intervention/deterministic cohort column for lift calculation
 
+**Layer 3 — Action:**
+- Tiered confidence-gated router: holdout bypass → kill-switch → escalation gate → 3-condition auto-correct gate → flag → pass
+- 3-condition auto-correct gate: LLM recommended + confidence ≥ 0.92 + charge ≤ $500 — FCA defense: action traces to governing rule, confidence floor defeats recklessness, dollar ceiling limits exposure
+- Immutable audit log — every action records `governing_rule_cited`; escalations include full LLM rationale draft for human sign-off; `reversible` flag on each record
+- Single-lever kill-switch — halts all auto-corrections instantly; system degrades to FLAG-only without silent failure; idempotent activate/deactivate
+
+**Layer 4 — Feedback:**
+- `adjudications.outcomes` Kafka consumer — closes the pre-submission → clearinghouse → payer → ERA loop; every outcome keyed by arm (intervention / holdout / deterministic)
+- Holdout lift calculator: intervention vs. control arm denial rates, absolute + relative lift; MIN_POWER_N=30 guard before reporting
+- Drift monitor: rolling 50-outcome window vs. 100-outcome baseline; >20% relative change activates kill-switch; returns `None` on cold start — no false alarms while warming up
+- Streamlit dashboard: kill-switch control panel, action distribution, live lift analysis, drift status, recent audit log tail; `DEMO_MODE` for public preview
 
 ---
 
