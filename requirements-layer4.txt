@@ -6,7 +6,7 @@
 # uses pure Python rolling stats; GE is documented as the production upgrade path.
 
 # Streaming
-confluent-kafka[avro]>=2.6.0
+confluent-kafka[avro]>=2.14.2
 fastavro>=1.9.7
 
 # LLM
