@@ -32,6 +32,7 @@ from confluent_kafka.avro import AvroConsumer
 from confluent_kafka.avro.serializer import SerializerError
 
 from src.config.settings import GateConfig, KafkaConfig
+from src.consumer.dlq_record import DLQRecord, FailureType
 from src.consumer.ncci_gate import GateDecision, NCCIGate, Route
 
 log = structlog.get_logger(__name__)
@@ -101,6 +102,7 @@ class ClaimConsumer:
         processed = 0
 
         while self._running:
+            claim: dict | None = None
             try:
                 msg = self._consumer.poll(timeout=1.0)
                 if msg is None:
@@ -128,10 +130,22 @@ class ClaimConsumer:
 
             except SerializerError as e:
                 log.error("schema_violation", error=str(e))
-                # Cannot deserialize — send raw bytes to DLQ if possible
-                self._emit_dlq({"error": str(e), "raw": str(msg.value() if msg else None)})
+                self._emit_dlq(DLQRecord(
+                    failure_type=FailureType.SCHEMA_VIOLATION,
+                    original_topic=KafkaConfig.TOPIC_CLAIMS_RAW,
+                    error_message=str(e),
+                    payload={},
+                    claim_id="",
+                ))
             except Exception as e:
                 log.error("consumer_error", error=str(e), exc_info=True)
+                self._emit_dlq(DLQRecord(
+                    failure_type=FailureType.PROCESSING_ERROR,
+                    original_topic=KafkaConfig.TOPIC_CLAIMS_RAW,
+                    error_message=str(e),
+                    payload=claim or {},
+                    claim_id=(claim or {}).get("claim_id", ""),
+                ))
 
     def _route(self, claim: dict) -> RoutingDecision:
         claim_id = claim.get("claim_id", "")
@@ -209,13 +223,13 @@ class ClaimConsumer:
             risk_score=routing.risk_score,
         )
 
-    def _emit_dlq(self, payload: dict) -> None:
+    def _emit_dlq(self, record: DLQRecord) -> None:
         self._producer.produce(
             topic=KafkaConfig.TOPIC_DLQ,
-            value=json.dumps(payload).encode("utf-8"),
+            value=record.to_bytes(),
         )
         self._producer.poll(0)
-        log.warning("sent_to_dlq", payload=payload)
+        log.warning("sent_to_dlq", claim_id=record.claim_id, failure_type=record.failure_type.value)
 
     def _handle_consumer_error(self, error: KafkaError) -> None:
         if error.code() == KafkaError._PARTITION_EOF:

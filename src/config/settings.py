@@ -81,6 +81,13 @@ class DataConfig:
     SEED_MUE_FILE = NCCI_DIR / "seed_mue.csv"
 
 
+class DLQConfig:
+    # Maximum retry attempts before a claim is quarantined
+    MAX_RETRIES = int(os.getenv("DLQ_MAX_RETRIES", "3"))
+    # Snowflake table for durable quarantine storage (production upgrade path)
+    QUARANTINE_TABLE = os.getenv("DLQ_QUARANTINE_TABLE", "RAW.claim_quarantine")
+
+
 class FeedbackConfig:
     # Baseline window size for drift detection (first N outcomes establish reference rate)
     DRIFT_BASELINE_WINDOW = int(os.getenv("DRIFT_BASELINE_WINDOW", "100"))
