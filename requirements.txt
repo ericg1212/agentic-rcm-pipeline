@@ -40,7 +40,7 @@ httpx==0.27.0
 
 # Utilities
 tenacity==8.4.1
-structlog==24.2.0
+structlog==26.1.0
 uuid6==2024.1.12
 
 # Dev / test

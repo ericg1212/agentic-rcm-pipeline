@@ -21,7 +21,7 @@ numpy>=2.1.0
 python-dotenv>=1.2.2
 
 # Utilities
-structlog>=24.1.0
+structlog>=26.1.0
 
 # Dev / test
 pytest>=8.0.0
