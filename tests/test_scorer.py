@@ -192,10 +192,17 @@ def _make_tool_use_block(name: str, tool_input: dict, block_id: str = "toolu_01"
     return block
 
 
-def _make_api_response(content: list, stop_reason: str = "tool_use"):
+def _make_api_response(
+    content: list,
+    stop_reason: str = "tool_use",
+    input_tokens: int = 120,
+    output_tokens: int = 60,
+):
     resp = MagicMock()
     resp.content = content
     resp.stop_reason = stop_reason
+    resp.usage.input_tokens = input_tokens
+    resp.usage.output_tokens = output_tokens
     return resp
 
 
@@ -302,3 +309,88 @@ def test_input_hash_changes_with_claim(clean_claim, pass_gate):
     modified = {**clean_claim, "submitted_charge": "999.00"}
     h2 = _compute_input_hash(modified, pass_gate)
     assert h1 != h2
+
+
+# ---------------------------------------------------------------------------
+# Token usage + cost-per-claim
+# ---------------------------------------------------------------------------
+
+def test_score_captures_token_usage(scorer, clean_claim, pass_gate):
+    submit_block = _make_tool_use_block(
+        "submit_scoring_decision",
+        {
+            "risk_score": 10,
+            "confidence": 0.92,
+            "predicted_denial_code": None,
+            "driving_fields": ["procedure_codes"],
+            "recommended_action": "flag",
+            "rationale": "Low-risk office visit. No bundling violations detected.",
+        },
+    )
+    scorer._client.messages.create.return_value = _make_api_response(
+        [submit_block], input_tokens=200, output_tokens=80
+    )
+
+    result = scorer.score(clean_claim, pass_gate)
+
+    assert result.input_tokens == 200
+    assert result.output_tokens == 80
+    assert result.cost_usd > 0.0
+    # cost = (200 * 3.0 + 80 * 15.0) / 1_000_000 = 0.0018
+    assert abs(result.cost_usd - 0.0018) < 1e-9
+
+
+def test_score_accumulates_tokens_across_iterations(scorer, clean_claim, pass_gate):
+    lookup_block = _make_tool_use_block(
+        "lookup_ncci_edit",
+        {"col1_code": "99213", "col2_code": "99211"},
+        block_id="toolu_01",
+    )
+    submit_block = _make_tool_use_block(
+        "submit_scoring_decision",
+        {
+            "risk_score": 60,
+            "confidence": 0.80,
+            "predicted_denial_code": "CO-97",
+            "driving_fields": ["procedure_codes"],
+            "recommended_action": "flag",
+            "rationale": "Bundled E&M codes. CO-97 likely.",
+        },
+        block_id="toolu_02",
+    )
+    scorer._client.messages.create.side_effect = [
+        _make_api_response([lookup_block], stop_reason="tool_use", input_tokens=150, output_tokens=40),
+        _make_api_response([submit_block], stop_reason="tool_use", input_tokens=200, output_tokens=70),
+    ]
+
+    result = scorer.score(clean_claim, pass_gate)
+
+    assert result.input_tokens == 350   # 150 + 200
+    assert result.output_tokens == 110  # 40 + 70
+    # cost = (350 * 3.0 + 110 * 15.0) / 1_000_000 = 0.002700
+    assert abs(result.cost_usd - 0.002700) < 1e-9
+
+
+def test_fallback_cost_attributed_when_loop_ran(scorer, clean_claim, pass_gate):
+    """Tokens consumed before validation failure should still be attributed."""
+    submit_block = _make_tool_use_block(
+        "submit_scoring_decision",
+        {
+            "risk_score": 80,
+            "confidence": 0.75,
+            "predicted_denial_code": "NOT-REAL-CODE",  # invalid → validation_failed fallback
+            "driving_fields": ["procedure_codes"],
+            "recommended_action": "flag",
+            "rationale": "Some denial reason.",
+        },
+    )
+    scorer._client.messages.create.return_value = _make_api_response(
+        [submit_block], input_tokens=180, output_tokens=50
+    )
+
+    result = scorer.score(clean_claim, pass_gate)
+
+    assert result.used_fallback is True
+    assert result.input_tokens == 180
+    assert result.output_tokens == 50
+    assert result.cost_usd > 0.0

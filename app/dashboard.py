@@ -19,7 +19,12 @@ from __future__ import annotations
 
 import os
 import random
+import sys
 from datetime import datetime, timedelta, timezone
+from pathlib import Path
+
+# Ensure the project root is on sys.path when Streamlit runs app/dashboard.py directly
+sys.path.insert(0, str(Path(__file__).parent.parent))
 
 import streamlit as st
 
@@ -50,6 +55,22 @@ def _require_auth() -> None:
 # ---------------------------------------------------------------------------
 # Demo data factory
 # ---------------------------------------------------------------------------
+
+def _build_demo_cost_stats(n_claims: int, seed: int = 42) -> dict:
+    """Synthetic cost stats for DEMO_MODE — mirrors real token-usage log output."""
+    rng = random.Random(seed)
+    avg_denial_value = 150.0
+    costs = [max(0.0010, rng.gauss(0.0030, 0.0005)) for _ in range(max(n_claims, 1))]
+    total = sum(costs)
+    avg = total / len(costs)
+    return {
+        "avg_cost_per_claim": avg,
+        "total_cost_usd": total,
+        "avg_denial_value": avg_denial_value,
+        "roi_multiplier": avg_denial_value / avg,
+        "n_claims": n_claims,
+    }
+
 
 def _build_demo_store(
     n_intervention: int = 180,
@@ -201,7 +222,38 @@ def main() -> None:
 
     st.divider()
 
-    # Row 3 — drift monitor
+    # Row 3 — API cost analytics
+    st.subheader("API Cost Analytics")
+    cost_stats = _build_demo_cost_stats(len(audit_log)) if DEMO_MODE else {}
+    cc1, cc2, cc3, cc4 = st.columns(4)
+    cc1.metric(
+        "Avg Cost / Claim",
+        f"${cost_stats.get('avg_cost_per_claim', 0):.4f}",
+        help="Claude API cost per scored claim (input + output tokens)",
+    )
+    cc2.metric(
+        "Total Session Cost",
+        f"${cost_stats.get('total_cost_usd', 0):.2f}",
+    )
+    cc3.metric(
+        "Avg Denial Value",
+        f"${cost_stats.get('avg_denial_value', 0):.0f}",
+        help="Average reimbursement value of a prevented denial",
+    )
+    cc4.metric(
+        "Cost ROI",
+        f"{cost_stats.get('roi_multiplier', 0):,.0f}×",
+        help="Denial value prevented per dollar of API spend",
+    )
+    st.caption(
+        f"${cost_stats.get('avg_cost_per_claim', 0):.3f} to analyze a claim → "
+        f"prevents a ${cost_stats.get('avg_denial_value', 0):.0f} denial = "
+        f"{cost_stats.get('roi_multiplier', 0):,.0f}× ROI"
+    )
+
+    st.divider()
+
+    # Row 4 — drift monitor
     st.subheader("Denial Rate Drift Monitor")
     drift_alert = drift_monitor.check_drift()
     if drift_alert is None:

@@ -36,6 +36,9 @@ class LLMConfig:
     API_KEY = os.getenv("ANTHROPIC_API_KEY")
     # Pinned version tag for reproducibility audit log
     MODEL_VERSION_TAG = "claude-sonnet-4-6-20250722"
+    # Per-million-token pricing for cost-per-claim analytics
+    INPUT_COST_PER_MTOK = 3.0    # $/MTok, claude-sonnet-4-6
+    OUTPUT_COST_PER_MTOK = 15.0  # $/MTok, claude-sonnet-4-6
 
 
 class SnowflakeConfig:
@@ -79,6 +82,13 @@ class DataConfig:
     PROVIDER_UTIL_DIR = ROOT / "data" / "provider_utilization"
     SEED_PTP_FILE = NCCI_DIR / "seed_ptp.csv"
     SEED_MUE_FILE = NCCI_DIR / "seed_mue.csv"
+
+
+class DLQConfig:
+    # Maximum retry attempts before a claim is quarantined
+    MAX_RETRIES = int(os.getenv("DLQ_MAX_RETRIES", "3"))
+    # Snowflake table for durable quarantine storage (production upgrade path)
+    QUARANTINE_TABLE = os.getenv("DLQ_QUARANTINE_TABLE", "RAW.claim_quarantine")
 
 
 class FeedbackConfig:

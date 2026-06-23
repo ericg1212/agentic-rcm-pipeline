@@ -66,6 +66,9 @@ class ScoringResult:
     latency_ms: int
     used_fallback: bool = False
     fallback_reason: str | None = None
+    input_tokens: int = 0
+    output_tokens: int = 0
+    cost_usd: float = 0.0
 
     def to_snowflake_row(self) -> dict:
         """Serialize for insertion into RAW.LLM_SCORING_RESULTS."""
@@ -85,6 +88,9 @@ class ScoringResult:
             "RATIONALE": self.rationale,
             "FULL_RESPONSE": json.dumps({"tool_calls": self.tool_calls, "fallback": self.used_fallback}),
             "LATENCY_MS": self.latency_ms,
+            "INPUT_TOKENS": self.input_tokens,
+            "OUTPUT_TOKENS": self.output_tokens,
+            "COST_USD": self.cost_usd,
         }
 
 
@@ -132,19 +138,27 @@ class ClaimScorer:
             claim_message = build_claim_message(claim, gate_decision)
             messages: list[dict] = [{"role": "user", "content": claim_message}]
 
-            submit_inputs, tool_trace = self._run_tool_loop(messages)
+            submit_inputs, tool_trace, input_tokens, output_tokens = self._run_tool_loop(messages)
+            cost_usd = (
+                input_tokens * LLMConfig.INPUT_COST_PER_MTOK
+                + output_tokens * LLMConfig.OUTPUT_COST_PER_MTOK
+            ) / 1_000_000
 
             if submit_inputs is None:
-                return self._fallback(
+                r = self._fallback(
                     claim, gate_decision, "max_iterations_exceeded",
                     input_hash, _elapsed_ms(start_ns),
                 )
+                r.input_tokens, r.output_tokens, r.cost_usd = input_tokens, output_tokens, cost_usd
+                return r
 
             if not self._validate(submit_inputs):
-                return self._fallback(
+                r = self._fallback(
                     claim, gate_decision, "validation_failed",
                     input_hash, _elapsed_ms(start_ns),
                 )
+                r.input_tokens, r.output_tokens, r.cost_usd = input_tokens, output_tokens, cost_usd
+                return r
 
             risk_score = int(submit_inputs["risk_score"])
             result = ScoringResult(
@@ -165,6 +179,9 @@ class ClaimScorer:
                 tool_calls=tool_trace,
                 latency_ms=_elapsed_ms(start_ns),
                 used_fallback=False,
+                input_tokens=input_tokens,
+                output_tokens=output_tokens,
+                cost_usd=cost_usd,
             )
             log.info(
                 "claim_scored",
@@ -173,6 +190,9 @@ class ClaimScorer:
                 action=result.recommended_action,
                 tool_calls=len(tool_trace),
                 latency_ms=result.latency_ms,
+                input_tokens=input_tokens,
+                output_tokens=output_tokens,
+                cost_usd=round(cost_usd, 6),
             )
             return result
 
@@ -189,14 +209,17 @@ class ClaimScorer:
 
     def _run_tool_loop(
         self, messages: list[dict]
-    ) -> tuple[dict | None, list[dict]]:
+    ) -> tuple[dict | None, list[dict], int, int]:
         """
-        Run the agentic tool loop. Returns (submit_inputs, tool_trace).
+        Run the agentic tool loop. Returns (submit_inputs, tool_trace, input_tokens, output_tokens).
 
         On the final iteration, tools are restricted to submit_scoring_decision
         and tool_choice is forced to "any" — the model MUST submit.
+        Token counts are accumulated across all iterations for cost-per-claim attribution.
         """
         tool_trace: list[dict] = []
+        total_input_tokens = 0
+        total_output_tokens = 0
 
         for iteration in range(MAX_TOOL_ITERATIONS):
             is_last = iteration == MAX_TOOL_ITERATIONS - 1
@@ -213,11 +236,13 @@ class ClaimScorer:
                 messages=messages,
             )
 
+            total_input_tokens += response.usage.input_tokens
+            total_output_tokens += response.usage.output_tokens
             messages.append({"role": "assistant", "content": response.content})
 
             if response.stop_reason == "max_tokens":
                 log.warning("scorer_max_tokens_hit", iteration=iteration)
-                return None, tool_trace
+                return None, tool_trace, total_input_tokens, total_output_tokens
 
             submit_inputs: dict | None = None
             tool_results: list[dict] = []
@@ -242,13 +267,13 @@ class ClaimScorer:
                     })
 
             if submit_inputs is not None:
-                return submit_inputs, tool_trace
+                return submit_inputs, tool_trace, total_input_tokens, total_output_tokens
 
             if tool_results:
                 messages.append({"role": "user", "content": tool_results})
             # else: stop_reason=end_turn with no tools → loop will force submit next iteration
 
-        return None, tool_trace
+        return None, tool_trace, total_input_tokens, total_output_tokens
 
     # ------------------------------------------------------------------
     # Validation
