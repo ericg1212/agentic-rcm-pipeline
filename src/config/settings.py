@@ -42,7 +42,7 @@ class LLMConfig:
 
 
 class SnowflakeConfig:
-    ACCOUNT = os.getenv("SNOWFLAKE_ACCOUNT", "gl20220")
+    ACCOUNT = os.getenv("SNOWFLAKE_ACCOUNT")
     USER = os.getenv("SNOWFLAKE_USER")
     PASSWORD = os.getenv("SNOWFLAKE_PASSWORD")
     DATABASE = os.getenv("SNOWFLAKE_DATABASE", "RCM_PREVENTION")
