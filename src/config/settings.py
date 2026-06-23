@@ -36,6 +36,9 @@ class LLMConfig:
     API_KEY = os.getenv("ANTHROPIC_API_KEY")
     # Pinned version tag for reproducibility audit log
     MODEL_VERSION_TAG = "claude-sonnet-4-6-20250722"
+    # Per-million-token pricing for cost-per-claim analytics
+    INPUT_COST_PER_MTOK = 3.0    # $/MTok, claude-sonnet-4-6
+    OUTPUT_COST_PER_MTOK = 15.0  # $/MTok, claude-sonnet-4-6
 
 
 class SnowflakeConfig:
