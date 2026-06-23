@@ -25,10 +25,6 @@ snowflake-sqlalchemy==1.6.1
 # Quality
 great-expectations==0.18.19
 
-# Dashboard
-streamlit==1.54.0
-plotly==5.22.0
-
 # Config
 python-dotenv==1.2.2
 pydantic==2.9.2
