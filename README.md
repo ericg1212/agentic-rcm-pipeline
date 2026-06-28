@@ -2,6 +2,7 @@
 
 [![CI](https://github.com/ericg1212/agentic-rcm-pipeline/actions/workflows/ci.yml/badge.svg)](https://github.com/ericg1212/agentic-rcm-pipeline/actions/workflows/ci.yml)
 [![codecov](https://codecov.io/gh/ericg1212/agentic-rcm-pipeline/branch/master/graph/badge.svg)](https://codecov.io/gh/ericg1212/agentic-rcm-pipeline)
+[![Release](https://img.shields.io/github/v/release/ericg1212/agentic-rcm-pipeline?style=flat-square)](https://github.com/ericg1212/agentic-rcm-pipeline/releases)
 [![Python 3.13](https://img.shields.io/badge/python-3.13-blue.svg)](https://www.python.org/downloads/)
 [![Kafka](https://img.shields.io/badge/kafka-3.8.0_KRaft-231F20?logo=apache-kafka&logoColor=white)](https://kafka.apache.org/)
 [![Snowflake](https://img.shields.io/badge/snowflake-warehouse-29B5E8?logo=snowflake&logoColor=white)](https://snowflake.com)
@@ -12,6 +13,7 @@
 ![Cost per Claim](https://img.shields.io/badge/cost%2Fclaim-%240.003-22c55e?style=flat-square)
 ![ROI](https://img.shields.io/badge/ROI-50%2C000x-d97706?style=flat-square)
 ![LLM Touch Rate](https://img.shields.io/badge/LLM%20touch%20rate-~15%25-8b5cf6?style=flat-square)
+![Holdout](https://img.shields.io/badge/holdout%20arm-10%25%20control-0ea5e9?style=flat-square)
 
 **By [Eric Grynspan](https://www.linkedin.com/in/ericgrynspan/)** &nbsp;·&nbsp; [← Trust but Verify](https://github.com/ericg1212/ai-healthcare-pipeline)
 
