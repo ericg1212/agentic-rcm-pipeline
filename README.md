@@ -8,6 +8,11 @@
 [![dbt](https://img.shields.io/badge/dbt-staging%20%2B%20mart-FF694B?logo=dbt&logoColor=white)](https://www.getdbt.com/)
 [![Claude API](https://img.shields.io/badge/claude-sonnet--4--6-5A67D8)](https://anthropic.com)
 
+![pytest](https://img.shields.io/badge/pytest-115%20passing-0A9EDC?style=flat-square&logo=pytest&logoColor=white)
+![Cost per Claim](https://img.shields.io/badge/cost%2Fclaim-%240.003-22c55e?style=flat-square)
+![ROI](https://img.shields.io/badge/ROI-50%2C000x-d97706?style=flat-square)
+![LLM Touch Rate](https://img.shields.io/badge/LLM%20touch%20rate-~15%25-8b5cf6?style=flat-square)
+
 **By [Eric Grynspan](https://www.linkedin.com/in/ericgrynspan/)** &nbsp;·&nbsp; [← Trust but Verify](https://github.com/ericg1212/ai-healthcare-pipeline)
 
 ---
