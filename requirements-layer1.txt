@@ -15,7 +15,7 @@ confluent-kafka[avro]>=2.14.2
 fastavro>=1.9.7
 
 # Data
-numpy>=2.1.0
+numpy>=2.5.0
 
 # Config
 python-dotenv>=1.2.2
