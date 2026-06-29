@@ -12,7 +12,7 @@
 
 # Streaming
 confluent-kafka[avro]>=2.14.2
-fastavro>=1.9.7
+fastavro>=1.12.2
 
 # Data
 numpy>=2.1.0

@@ -8,7 +8,7 @@
 
 # Streaming
 confluent-kafka[avro]==2.14.2
-fastavro==1.9.4
+fastavro==1.12.2
 
 # LLM
 anthropic==0.31.0
