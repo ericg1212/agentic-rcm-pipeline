@@ -13,7 +13,7 @@ import json
 
 from src.consumer.ncci_gate import GateDecision
 
-PROMPT_VERSION = "v1.0.0"
+PROMPT_VERSION = "v1.1.0"
 
 SYSTEM_PROMPT = """\
 You are an autonomous RCM (Revenue Cycle Management) claim scoring agent for a Medicare \
@@ -44,7 +44,7 @@ SCORING GUIDELINES:
     flag — needs billing team review before submission
     hold — high risk; do not submit without intervention
     escalate — complex case requiring expert review; you will draft the correction rationale
-- rationale: 1-3 plain-English sentences for the billing team
+- rationale: 1-3 plain-English action instructions for the billing team — imperative voice, specific and actionable (e.g., "Attach the operative note for modifier 59 to override the CO-97 bundling flag")
 
 Common denial patterns to check:
 - Bundled codes (NCCI PTP): two codes that cannot be billed together without a valid bypass modifier

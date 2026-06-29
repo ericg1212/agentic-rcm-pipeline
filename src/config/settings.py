@@ -98,3 +98,46 @@ class FeedbackConfig:
     DRIFT_ROLLING_WINDOW = int(os.getenv("DRIFT_ROLLING_WINDOW", "50"))
     # Relative change threshold that triggers the kill-switch (0.20 = 20% relative change)
     DRIFT_THRESHOLD = float(os.getenv("DRIFT_THRESHOLD", "0.20"))
+
+
+class IntelligenceConfig:
+    # Ingestion cadence for rule graph refresh (Dagster job settings)
+    NCD_REFRESH_DAYS = int(os.getenv("NCD_REFRESH_DAYS", "7"))    # NCDs: weekly
+    LCD_REFRESH_DAYS = int(os.getenv("LCD_REFRESH_DAYS", "1"))    # LCDs: daily per MAC
+    # Snowflake table for persisted rule graph
+    PAYER_RULES_TABLE = os.getenv("PAYER_RULES_TABLE", "RAW.PAYER_RULES")
+    # Seed files (fallback for offline/test mode)
+    SEED_LCD_FILE = ROOT / "data" / "lcd" / "seed_lcd.json"
+    MAC_JURISDICTION_FILE = ROOT / "data" / "mac_jurisdiction.json"
+    PAYER_REGISTRY_FILE = ROOT / "data" / "payer_registry.json"
+
+
+class PAConfig:
+    # Escalate when PA approval likelihood is below this threshold
+    PA_ESCALATE_THRESHOLD = float(os.getenv("PA_ESCALATE_THRESHOLD", "0.70"))
+    # CMS-0057-F turnaround requirements (effective Jan 2027)
+    PA_URGENT_HOURS = int(os.getenv("PA_URGENT_HOURS", "72"))
+    PA_STANDARD_DAYS = int(os.getenv("PA_STANDARD_DAYS", "7"))
+
+
+class CalibrationConfig:
+    # ECE threshold that triggers Platt recalibration
+    ECE_THRESHOLD = float(os.getenv("ECE_THRESHOLD", "0.05"))
+    # ECE threshold above which a CALIBRATION_ALERT is emitted (FCA reckless disregard signal)
+    FCA_ALERT_ECE = float(os.getenv("FCA_ALERT_ECE", "0.10"))
+    # Mean confidence floor that — combined with ECE > FCA_ALERT_ECE — triggers alert
+    FCA_ALERT_CONFIDENCE_FLOOR = float(os.getenv("FCA_ALERT_CONFIDENCE_FLOOR", "0.85"))
+    # Minimum labeled outcomes before calibration runs (same guard as LiftCalculator)
+    MIN_LABELED_OUTCOMES = int(os.getenv("CALIBRATION_MIN_OUTCOMES", "30"))
+    # Number of decile bins for reliability diagram
+    N_BINS = int(os.getenv("CALIBRATION_N_BINS", "10"))
+    CALIBRATION_CHECKPOINTS_TABLE = os.getenv("CALIBRATION_CHECKPOINTS_TABLE", "RAW.CALIBRATION_CHECKPOINTS")
+
+
+class ClusterConfig:
+    # DBSCAN parameters for denial pattern clustering
+    DBSCAN_EPS = float(os.getenv("CLUSTER_DBSCAN_EPS", "0.5"))
+    DBSCAN_MIN_SAMPLES = int(os.getenv("CLUSTER_MIN_SAMPLES", "5"))
+    # Minimum outcomes before clustering runs
+    MIN_OUTCOMES = int(os.getenv("CLUSTER_MIN_OUTCOMES", "50"))
+    DENIAL_CLUSTERS_TABLE = os.getenv("DENIAL_CLUSTERS_TABLE", "RAW.DENIAL_CLUSTERS")

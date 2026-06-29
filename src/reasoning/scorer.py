@@ -69,6 +69,14 @@ class ScoringResult:
     input_tokens: int = 0
     output_tokens: int = 0
     cost_usd: float = 0.0
+    # Phase 2 — PA Pre-Check fields (None when PA tool was not called)
+    pa_required: bool | None = None
+    pa_approval_likelihood: float | None = None
+    pa_criteria_met: list = None  # list[str]
+
+    def __post_init__(self):
+        if self.pa_criteria_met is None:
+            self.pa_criteria_met = []
 
     def to_snowflake_row(self) -> dict:
         """Serialize for insertion into RAW.LLM_SCORING_RESULTS."""
@@ -91,6 +99,9 @@ class ScoringResult:
             "INPUT_TOKENS": self.input_tokens,
             "OUTPUT_TOKENS": self.output_tokens,
             "COST_USD": self.cost_usd,
+            "PA_REQUIRED": self.pa_required,
+            "PA_APPROVAL_LIKELIHOOD": self.pa_approval_likelihood,
+            "PA_CRITERIA_MET": json.dumps(self.pa_criteria_met),
         }
 
 
@@ -161,6 +172,11 @@ class ClaimScorer:
                 return r
 
             risk_score = int(submit_inputs["risk_score"])
+            # Extract PA result from tool trace if check_prior_auth_required was called
+            pa_tool_result: dict = next(
+                (t["result"] for t in tool_trace if t["tool"] == "check_prior_auth_required"),
+                {},
+            )
             result = ScoringResult(
                 score_id=str(uuid.uuid4()),
                 claim_id=claim_id,
@@ -182,6 +198,9 @@ class ClaimScorer:
                 input_tokens=input_tokens,
                 output_tokens=output_tokens,
                 cost_usd=cost_usd,
+                pa_required=pa_tool_result.get("pa_required"),
+                pa_approval_likelihood=pa_tool_result.get("pa_approval_likelihood"),
+                pa_criteria_met=pa_tool_result.get("pa_criteria_met", []),
             )
             log.info(
                 "claim_scored",
@@ -432,6 +451,54 @@ class ClaimScorer:
                     "required": ["payer_id", "procedure_code"],
                 },
             },
+            {
+                "name": "get_payer_rules",
+                "description": (
+                    "Phase 2: retrieve payer-specific coverage rule from the Payer Rule Intelligence "
+                    "Graph. Returns NCD/LCD source type, coverage status, prior auth requirement, "
+                    "PA criteria, and conflict type (lcd_adds_restriction | null). "
+                    "Use when the claim involves a procedure with known payer-specific restrictions "
+                    "or prior authorization requirements."
+                ),
+                "input_schema": {
+                    "type": "object",
+                    "properties": {
+                        "payer_id": {"type": "string", "description": "Payer identifier from the claim"},
+                        "procedure_code": {"type": "string", "description": "HCPCS/CPT procedure code"},
+                        "diagnosis_code": {
+                            "type": "string",
+                            "description": "ICD-10-CM code to check diagnosis coverage (optional)",
+                        },
+                    },
+                    "required": ["payer_id", "procedure_code"],
+                },
+            },
+            {
+                "name": "check_prior_auth_required",
+                "description": (
+                    "Phase 2: check whether prior authorization is required for a procedure/payer "
+                    "combination and estimate approval likelihood. Returns pa_required bool, "
+                    "pa_approval_likelihood (0-1), criteria met/unmet, and the denial code if "
+                    "PA is denied (CO-197). Use when get_payer_rules indicates requires_prior_auth=true "
+                    "or when the claim involves a high-cost surgical or imaging procedure."
+                ),
+                "input_schema": {
+                    "type": "object",
+                    "properties": {
+                        "payer_id": {"type": "string", "description": "Payer identifier from the claim"},
+                        "hcpcs_code": {"type": "string", "description": "HCPCS/CPT procedure code"},
+                        "diagnosis_code": {
+                            "type": "string",
+                            "description": "ICD-10-CM code for diagnosis-specific PA criteria (optional)",
+                        },
+                        "provider_npi": {
+                            "type": "string",
+                            "description": "Provider NPI for gold-card exemption check (optional)",
+                        },
+                    },
+                    "required": ["payer_id", "hcpcs_code"],
+                },
+            },
         ]
 
     def _build_submit_tool(self) -> dict:
@@ -474,7 +541,11 @@ class ClaimScorer:
                     },
                     "rationale": {
                         "type": "string",
-                        "description": "Plain-English explanation for billing staff (1-3 sentences)",
+                        "description": (
+                            "Plain-English action instruction for billing staff — imperative voice, "
+                            "specific and actionable (e.g., 'Attach the operative note for modifier 59 "
+                            "to override the CO-97 bundling flag'). 1-3 sentences max."
+                        ),
                     },
                 },
                 "required": [

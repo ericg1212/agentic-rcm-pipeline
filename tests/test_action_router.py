@@ -323,6 +323,8 @@ def test_escalate_builds_draft(router):
     assert decision.action_taken == "escalate"
     assert decision.escalation_draft is not None
     assert "ESCALATION DRAFT" in decision.escalation_draft
+    assert "BILLING GUIDANCE" in decision.escalation_draft
+    assert score.rationale in decision.escalation_draft
     assert decision.reversible is False
 
 

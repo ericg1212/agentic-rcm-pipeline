@@ -1,0 +1,16 @@
+{
+  "version": "v1-seed",
+  "note": "Maps payer_id to the states where that payer operates. Used to resolve payer_id -> contractor_id via mac_jurisdiction.json. payer_ids match the generator's PAYER_POOL. MEDICARE_FFS has no states — always resolves to NCD (national policy).",
+  "payer_states": {
+    "UHC_COMMERCIAL": ["NY", "CA", "TX", "FL", "IL", "OH", "PA", "NJ", "GA", "NC"],
+    "AETNA_COMMERCIAL": ["CT", "NY", "NJ", "PA", "MA", "TX", "FL", "CA", "OH"],
+    "BCBS_NY": ["NY"],
+    "BCBS_TX": ["TX", "OK", "NM"],
+    "CIGNA_COMMERCIAL": ["CT", "PA", "NJ", "NY", "MA", "TX", "CA", "IL"],
+    "HUMANA_COMMERCIAL": ["KY", "TN", "FL", "TX", "OH", "IN", "IL", "AL", "GA"],
+    "MEDICAID_NY": ["NY"],
+    "MEDICAID_CA": ["CA"],
+    "MEDICAID_TX": ["TX"],
+    "MEDICARE_FFS": []
+  }
+}

@@ -1,138 +1,314 @@
 {
-  "version": "v1-seed",
-  "note": "Simplified LCD coverage rules derived from CMS Medicare Coverage Database. Covers high-frequency codes in the procedure weight pool. Extend with real LCD data when available.",
+  "version": "v2-phase2",
+  "note": "Phase 2: added source_type, contractor_id, requires_prior_auth, pa_criteria, gold_card_eligible, coverage_status, effective_date fields. Simplified LCD coverage rules derived from CMS Medicare Coverage Database. Extend with real LCD data via ingestion.py when available.",
   "policies": {
     "27447": {
       "procedure_name": "Total knee arthroplasty",
+      "source_type": "lcd",
+      "contractor_id": null,
+      "coverage_status": "covered_with_restrictions",
       "covered_icd10_prefixes": ["M17", "M16", "M25.36", "M25.37", "M23"],
       "coverage_note": "Requires primary OA (M17), hip OA (M16), or mechanical joint derangement. Psychiatric, metabolic-only, or infectious diagnoses without joint pathology do not support medical necessity.",
-      "typical_denial_code": "CO-50"
+      "requires_prior_auth": true,
+      "pa_criteria": "Medical necessity documentation required. Conservative treatment failure (PT ≥6 weeks, corticosteroid injections) must be documented. BMI and functional limitations should be documented.",
+      "gold_card_eligible": false,
+      "typical_denial_code": "CO-50",
+      "effective_date": "2024-01-01",
+      "expiration_date": null
     },
     "29827": {
       "procedure_name": "Arthroscopy shoulder rotator cuff repair",
+      "source_type": "lcd",
+      "contractor_id": null,
+      "coverage_status": "covered_with_restrictions",
       "covered_icd10_prefixes": ["M75.1", "M75.0", "M75.3", "S40", "S46"],
       "coverage_note": "Requires rotator cuff tear (M75.1), impingement (M75.0), or shoulder trauma (S40/S46). Non-musculoskeletal diagnoses alone do not support medical necessity.",
-      "typical_denial_code": "CO-50"
+      "requires_prior_auth": true,
+      "pa_criteria": "MRI-confirmed full-thickness or symptomatic partial-thickness tear required. Conservative treatment failure (PT ≥6 weeks) must be documented.",
+      "gold_card_eligible": false,
+      "typical_denial_code": "CO-50",
+      "effective_date": "2024-01-01",
+      "expiration_date": null
     },
     "29823": {
       "procedure_name": "Arthroscopy shoulder debridement",
+      "source_type": "lcd",
+      "contractor_id": null,
+      "coverage_status": "covered_with_restrictions",
       "covered_icd10_prefixes": ["M75", "S40", "S46", "M25.3"],
       "coverage_note": "Requires shoulder pathology diagnosis. Bundled with 29827 under NCCI when performed in same operative session.",
-      "typical_denial_code": "CO-50"
+      "requires_prior_auth": true,
+      "pa_criteria": "Conservative treatment failure required. Clinical documentation of shoulder pathology required.",
+      "gold_card_eligible": false,
+      "typical_denial_code": "CO-50",
+      "effective_date": "2024-01-01",
+      "expiration_date": null
     },
     "27446": {
       "procedure_name": "Knee arthroplasty (partial)",
+      "source_type": "lcd",
+      "contractor_id": null,
+      "coverage_status": "covered_with_restrictions",
       "covered_icd10_prefixes": ["M17", "M25.36", "M23"],
       "coverage_note": "Requires medial or lateral compartment OA or joint pathology. Full knee replacement (27447) is the inclusive code when total replacement performed.",
-      "typical_denial_code": "CO-97"
+      "requires_prior_auth": true,
+      "pa_criteria": "Single compartment OA documented on MRI or weight-bearing X-ray. Conservative treatment failure documented.",
+      "gold_card_eligible": false,
+      "typical_denial_code": "CO-97",
+      "effective_date": "2024-01-01",
+      "expiration_date": null
     },
     "43239": {
       "procedure_name": "Upper GI endoscopy with biopsy",
+      "source_type": "lcd",
+      "contractor_id": null,
+      "coverage_status": "covered_with_restrictions",
       "covered_icd10_prefixes": ["K21", "K29", "K57", "K92", "R10", "K25", "K26", "K27", "K22"],
       "coverage_note": "Requires GI indication: GERD (K21), gastritis (K29), diverticulosis (K57), GI bleed (K92), abdominal pain with GI context (R10), peptic ulcer (K25-K27), esophageal disease (K22). Bundled with 43235 under NCCI.",
-      "typical_denial_code": "CO-50"
+      "requires_prior_auth": true,
+      "pa_criteria": "Symptoms persisting despite empirical treatment (e.g., PPI therapy ≥4 weeks for GERD). Clinical indication documented by ordering provider.",
+      "gold_card_eligible": false,
+      "typical_denial_code": "CO-50",
+      "effective_date": "2024-01-01",
+      "expiration_date": null
     },
     "43235": {
       "procedure_name": "Upper GI endoscopy, diagnostic",
+      "source_type": "lcd",
+      "contractor_id": null,
+      "coverage_status": "covered_with_restrictions",
       "covered_icd10_prefixes": ["K21", "K29", "K57", "K92", "R10", "K25", "K26", "K27", "K22"],
       "coverage_note": "Requires GI indication. Bundled with 43239 under NCCI (included in biopsy code).",
-      "typical_denial_code": "CO-97"
+      "requires_prior_auth": true,
+      "pa_criteria": "Clinical indication required. Symptoms documented.",
+      "gold_card_eligible": false,
+      "typical_denial_code": "CO-97",
+      "effective_date": "2024-01-01",
+      "expiration_date": null
     },
     "93000": {
       "procedure_name": "ECG with interpretation",
+      "source_type": "lcd",
+      "contractor_id": null,
+      "coverage_status": "covered_with_restrictions",
       "covered_icd10_prefixes": ["I", "R00", "R01", "R07", "Z03.89", "Z01.810", "Z13"],
       "coverage_note": "Requires cardiac indication: cardiac disease (I-codes), arrhythmia (R00), murmur (R01), chest pain (R07), cardiac screening (Z01.810, Z03.89). Non-cardiac diagnoses without co-morbid cardiac condition are not supported.",
-      "typical_denial_code": "CO-50"
+      "requires_prior_auth": false,
+      "pa_criteria": null,
+      "gold_card_eligible": false,
+      "typical_denial_code": "CO-50",
+      "effective_date": "2024-01-01",
+      "expiration_date": null
     },
     "93005": {
       "procedure_name": "ECG, tracing only",
+      "source_type": "lcd",
+      "contractor_id": null,
+      "coverage_status": "covered_with_restrictions",
       "covered_icd10_prefixes": ["I", "R00", "R01", "R07", "Z03.89", "Z01.810"],
       "coverage_note": "Technical component of ECG. Bundled with 93000 under NCCI when interpretation is billed by same provider on same day.",
-      "typical_denial_code": "CO-97"
+      "requires_prior_auth": false,
+      "pa_criteria": null,
+      "gold_card_eligible": false,
+      "typical_denial_code": "CO-97",
+      "effective_date": "2024-01-01",
+      "expiration_date": null
     },
     "20610": {
       "procedure_name": "Arthrocentesis / joint injection, major joint",
+      "source_type": "lcd",
+      "contractor_id": null,
+      "coverage_status": "covered_with_restrictions",
       "covered_icd10_prefixes": ["M17", "M06", "M05", "M79", "M25"],
       "coverage_note": "Requires joint pathology diagnosis: OA (M17), RA (M06/M05), joint pain (M79/M25). Non-articular diagnoses do not support medical necessity.",
-      "typical_denial_code": "CO-50"
+      "requires_prior_auth": false,
+      "pa_criteria": null,
+      "gold_card_eligible": false,
+      "typical_denial_code": "CO-50",
+      "effective_date": "2024-01-01",
+      "expiration_date": null
     },
     "99213": {
       "procedure_name": "Office visit, established patient, moderate complexity",
+      "source_type": "lcd",
+      "contractor_id": null,
+      "coverage_status": "covered",
       "covered_icd10_prefixes": [],
       "coverage_note": "Broadly covered. No specific diagnosis restriction for office E&M visits. Level of service must match documented complexity.",
-      "typical_denial_code": null
+      "requires_prior_auth": false,
+      "pa_criteria": null,
+      "gold_card_eligible": false,
+      "typical_denial_code": null,
+      "effective_date": "2024-01-01",
+      "expiration_date": null
     },
     "99214": {
       "procedure_name": "Office visit, established patient, high complexity",
+      "source_type": "lcd",
+      "contractor_id": null,
+      "coverage_status": "covered",
       "covered_icd10_prefixes": [],
       "coverage_note": "Broadly covered. Level-of-service documentation must support high MDM or time-based billing.",
-      "typical_denial_code": null
+      "requires_prior_auth": false,
+      "pa_criteria": null,
+      "gold_card_eligible": false,
+      "typical_denial_code": null,
+      "effective_date": "2024-01-01",
+      "expiration_date": null
     },
     "99212": {
       "procedure_name": "Office visit, established patient, low complexity",
+      "source_type": "lcd",
+      "contractor_id": null,
+      "coverage_status": "covered",
       "covered_icd10_prefixes": [],
       "coverage_note": "Broadly covered.",
-      "typical_denial_code": null
+      "requires_prior_auth": false,
+      "pa_criteria": null,
+      "gold_card_eligible": false,
+      "typical_denial_code": null,
+      "effective_date": "2024-01-01",
+      "expiration_date": null
     },
     "99215": {
       "procedure_name": "Office visit, established patient, very high complexity",
+      "source_type": "lcd",
+      "contractor_id": null,
+      "coverage_status": "covered",
       "covered_icd10_prefixes": [],
       "coverage_note": "Broadly covered. Very high MDM or 55+ minutes required.",
-      "typical_denial_code": null
+      "requires_prior_auth": false,
+      "pa_criteria": null,
+      "gold_card_eligible": false,
+      "typical_denial_code": null,
+      "effective_date": "2024-01-01",
+      "expiration_date": null
     },
     "85025": {
       "procedure_name": "CBC with differential",
+      "source_type": "lcd",
+      "contractor_id": null,
+      "coverage_status": "covered",
       "covered_icd10_prefixes": [],
       "coverage_note": "Broadly covered for diagnostic CBC. No specific diagnosis exclusions.",
-      "typical_denial_code": null
+      "requires_prior_auth": false,
+      "pa_criteria": null,
+      "gold_card_eligible": false,
+      "typical_denial_code": null,
+      "effective_date": "2024-01-01",
+      "expiration_date": null
     },
     "80053": {
       "procedure_name": "Comprehensive metabolic panel",
+      "source_type": "lcd",
+      "contractor_id": null,
+      "coverage_status": "covered",
       "covered_icd10_prefixes": [],
       "coverage_note": "Broadly covered for metabolic monitoring. No specific exclusions.",
-      "typical_denial_code": null
+      "requires_prior_auth": false,
+      "pa_criteria": null,
+      "gold_card_eligible": false,
+      "typical_denial_code": null,
+      "effective_date": "2024-01-01",
+      "expiration_date": null
     },
     "36415": {
       "procedure_name": "Routine venipuncture",
+      "source_type": "lcd",
+      "contractor_id": null,
+      "coverage_status": "covered",
       "covered_icd10_prefixes": [],
       "coverage_note": "Broadly covered. No specific diagnosis requirement.",
-      "typical_denial_code": null
+      "requires_prior_auth": false,
+      "pa_criteria": null,
+      "gold_card_eligible": false,
+      "typical_denial_code": null,
+      "effective_date": "2024-01-01",
+      "expiration_date": null
     },
     "11042": {
       "procedure_name": "Debridement, skin and subcutaneous tissue",
+      "source_type": "lcd",
+      "contractor_id": null,
+      "coverage_status": "covered_with_restrictions",
       "covered_icd10_prefixes": ["L89", "E11.6", "E10.6", "L97", "L98"],
       "coverage_note": "Requires wound or ulcer diagnosis: pressure ulcer (L89), diabetic wound (E11.6/E10.6), non-pressure ulcer (L97/L98). Routine wound care on intact skin is not covered.",
-      "typical_denial_code": "CO-50"
+      "requires_prior_auth": true,
+      "pa_criteria": "Wound classification and treatment plan required. Wound type, size, and depth must be documented.",
+      "gold_card_eligible": false,
+      "typical_denial_code": "CO-50",
+      "effective_date": "2024-01-01",
+      "expiration_date": null
     },
     "90837": {
       "procedure_name": "60-min individual psychotherapy",
+      "source_type": "lcd",
+      "contractor_id": null,
+      "coverage_status": "covered_with_restrictions",
       "covered_icd10_prefixes": ["F"],
       "coverage_note": "Requires documented psychiatric/behavioral health diagnosis (F-code). Cannot be billed without a qualifying mental health diagnosis.",
-      "typical_denial_code": "CO-11"
+      "requires_prior_auth": false,
+      "pa_criteria": null,
+      "gold_card_eligible": false,
+      "typical_denial_code": "CO-11",
+      "effective_date": "2024-01-01",
+      "expiration_date": null
     },
     "90834": {
       "procedure_name": "45-min individual psychotherapy",
+      "source_type": "lcd",
+      "contractor_id": null,
+      "coverage_status": "covered_with_restrictions",
       "covered_icd10_prefixes": ["F"],
       "coverage_note": "Requires documented psychiatric/behavioral health diagnosis (F-code).",
-      "typical_denial_code": "CO-11"
+      "requires_prior_auth": false,
+      "pa_criteria": null,
+      "gold_card_eligible": false,
+      "typical_denial_code": "CO-11",
+      "effective_date": "2024-01-01",
+      "expiration_date": null
     },
     "99232": {
       "procedure_name": "Subsequent hospital care, moderate complexity",
+      "source_type": "lcd",
+      "contractor_id": null,
+      "coverage_status": "covered",
       "covered_icd10_prefixes": [],
       "coverage_note": "Broadly covered for inpatient follow-up. Place of service must be 21 (inpatient).",
-      "typical_denial_code": null
+      "requires_prior_auth": false,
+      "pa_criteria": null,
+      "gold_card_eligible": false,
+      "typical_denial_code": null,
+      "effective_date": "2024-01-01",
+      "expiration_date": null
     },
     "99233": {
       "procedure_name": "Subsequent hospital care, high complexity",
+      "source_type": "lcd",
+      "contractor_id": null,
+      "coverage_status": "covered",
       "covered_icd10_prefixes": [],
       "coverage_note": "Broadly covered for inpatient follow-up with high complexity. Place of service must be 21 (inpatient).",
-      "typical_denial_code": null
+      "requires_prior_auth": false,
+      "pa_criteria": null,
+      "gold_card_eligible": false,
+      "typical_denial_code": null,
+      "effective_date": "2024-01-01",
+      "expiration_date": null
     },
     "99285": {
       "procedure_name": "ED visit, high complexity",
+      "source_type": "lcd",
+      "contractor_id": null,
+      "coverage_status": "covered",
       "covered_icd10_prefixes": [],
       "coverage_note": "Broadly covered for ED visits. Place of service must be 23 (emergency room).",
-      "typical_denial_code": null
+      "requires_prior_auth": false,
+      "pa_criteria": null,
+      "gold_card_eligible": false,
+      "typical_denial_code": null,
+      "effective_date": "2024-01-01",
+      "expiration_date": null
     }
   }
 }

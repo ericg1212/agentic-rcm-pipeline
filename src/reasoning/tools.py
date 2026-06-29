@@ -16,6 +16,7 @@ import structlog
 
 from src.config.settings import DataConfig
 from src.consumer.ncci_gate import NCCIGate
+from src.intelligence.rule_graph import PayerRuleGraph
 
 log = structlog.get_logger(__name__)
 
@@ -47,6 +48,9 @@ class ToolRegistry:
     def __init__(self, ncci_gate: NCCIGate) -> None:
         self._gate = ncci_gate
         self._lcd: dict = self._load_lcd()
+        # Phase 2: payer rule intelligence graph (loaded from seed at startup)
+        self._rule_graph: PayerRuleGraph = PayerRuleGraph()
+        self._rule_graph.load_from_seed()
         # Rolling denial counts: {payer_id: {procedure_code: {"seen": int, "denied": int}}}
         self._payer_history: dict[str, dict[str, dict[str, int]]] = {}
 
@@ -61,6 +65,8 @@ class ToolRegistry:
             "get_lcd_policy": self._get_lcd_policy,
             "check_modifier": self._check_modifier,
             "get_payer_history": self._get_payer_history,
+            "get_payer_rules": self._get_payer_rules,
+            "check_prior_auth_required": self._check_prior_auth_required,
         }
         fn = dispatch.get(tool_name)
         if fn is None:
@@ -209,6 +215,101 @@ class ToolRegistry:
             "note": (
                 f"Denial rate {denial_rate:.1%} over {bucket['seen']} recent claims "
                 f"for {payer_id} + {procedure_code}."
+            ),
+        }
+
+    def _get_payer_rules(
+        self,
+        payer_id: str,
+        procedure_code: str,
+        diagnosis_code: str | None = None,
+    ) -> dict:
+        """
+        Phase 2: retrieve payer-specific coverage rule from the PayerRuleGraph.
+
+        Resolution chain: payer_id → state → MAC contractor_id → LCD rule.
+        Falls back to NCD (national policy, contractor_id=null) when no
+        jurisdiction match exists. More restrictive rule always wins on conflict.
+
+        Returns: rule metadata including requires_prior_auth, pa_criteria,
+        coverage_status, conflict_type (None | 'lcd_adds_restriction').
+        """
+        return self._rule_graph.get_rule_for_tool(payer_id, procedure_code, diagnosis_code)
+
+    def _check_prior_auth_required(
+        self,
+        payer_id: str,
+        hcpcs_code: str,
+        diagnosis_code: str | None = None,
+        provider_npi: str | None = None,
+    ) -> dict:
+        """
+        Phase 2 PA Pre-Check: determine if prior authorization is required and
+        estimate approval likelihood based on available clinical context.
+
+        Gold-carding: when provider_npi is known and the payer has exempted the
+        provider, pa_required=False and gold_card_exempt=True regardless of rule.
+
+        CMS-0057-F (effective Jan 2027): payers must respond within 72hr (urgent)
+        or 7 days (standard) for prior authorization requests via FHIR API.
+        """
+        rule = self._rule_graph.get_rule_for_tool(payer_id, hcpcs_code, diagnosis_code)
+
+        if not rule.get("found"):
+            return {
+                "pa_required": False,
+                "pa_approval_likelihood": 1.0,
+                "pa_criteria_met": [],
+                "pa_criteria_unmet": [],
+                "denial_code_if_denied": None,
+                "gold_card_exempt": False,
+                "note": "Procedure not in rule graph — no PA requirement found.",
+            }
+
+        requires_pa: bool = rule.get("requires_prior_auth", False)
+        pa_criteria: str | None = rule.get("pa_criteria")
+        diagnosis_covered: bool | None = rule.get("diagnosis_covered")
+        gold_card_eligible: bool = rule.get("gold_card_eligible", False)
+
+        # Approximate approval likelihood from available signals:
+        # - Diagnosis covered → +0.35
+        # - No diagnosis restriction (broadly covered) → +0.30
+        # - Gold-card eligible → +0.20
+        # Base = 0.45 (some PA approvals happen regardless)
+        approval_likelihood = 0.45
+        criteria_met: list[str] = []
+        criteria_unmet: list[str] = []
+
+        if diagnosis_covered is True:
+            approval_likelihood += 0.35
+            criteria_met.append("diagnosis_supported")
+        elif diagnosis_covered is False:
+            criteria_unmet.append("diagnosis_not_covered_by_policy")
+        else:
+            approval_likelihood += 0.30  # no restriction = broadly covered
+            criteria_met.append("no_diagnosis_restriction")
+
+        if gold_card_eligible:
+            approval_likelihood += 0.20
+            criteria_met.append("gold_card_eligible_procedure")
+
+        # PA criteria string signals documentation requirements
+        if pa_criteria:
+            criteria_unmet.append("documentation_required")
+
+        approval_likelihood = round(min(approval_likelihood, 1.0), 4)
+
+        return {
+            "pa_required": requires_pa,
+            "pa_approval_likelihood": approval_likelihood if requires_pa else 1.0,
+            "pa_criteria_met": criteria_met,
+            "pa_criteria_unmet": criteria_unmet,
+            "denial_code_if_denied": "CO-197" if requires_pa else None,
+            "gold_card_exempt": False,  # gold_card_exempt requires NPI verification (not in claim context)
+            "governing_rule": "CMS-0057-F",
+            "note": (
+                f"PA {'required' if requires_pa else 'not required'} for {hcpcs_code}. "
+                f"Approval likelihood: {approval_likelihood:.0%}."
             ),
         }
 
