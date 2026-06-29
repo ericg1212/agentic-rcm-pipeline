@@ -9,7 +9,7 @@
 [![dbt](https://img.shields.io/badge/dbt-staging%20%2B%20mart-FF694B?logo=dbt&logoColor=white)](https://www.getdbt.com/)
 [![Claude API](https://img.shields.io/badge/claude-sonnet--4--6-5A67D8)](https://anthropic.com)
 
-![pytest](https://img.shields.io/badge/pytest-115%20passing-0A9EDC?style=flat-square&logo=pytest&logoColor=white)
+![pytest](https://img.shields.io/badge/pytest-216%20passing-0A9EDC?style=flat-square&logo=pytest&logoColor=white)
 ![Cost per Claim](https://img.shields.io/badge/cost%2Fclaim-%240.003-22c55e?style=flat-square)
 ![ROI](https://img.shields.io/badge/ROI-50%2C000x-d97706?style=flat-square)
 ![LLM Touch Rate](https://img.shields.io/badge/LLM%20touch%20rate-~15%25-8b5cf6?style=flat-square)
@@ -145,7 +145,7 @@ make up          # Kafka + Schema Registry + UI (http://localhost:8080)
 cp .env.example .env && make install
 make producer    # start live claim generator
 make consumer    # start NCCI gate consumer
-make test        # 115 tests
+make test        # 216 tests
 ```
 
 Download real NCCI quarterly CSVs from CMS and place in `data/ncci/`. Seed files included for dev.
