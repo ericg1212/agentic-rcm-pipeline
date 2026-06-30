@@ -25,11 +25,11 @@ Denied classifies denials retrospectively. Trust but Verify adds AI governance. 
 |---|---|---|
 | [Denied](https://github.com/ericg1212/healthcare-claims-pipeline) | Retrospective denial classification — separate 27K systematic denials with an upstream fix from 229K documentation failures requiring a different intervention | Live |
 | [Trust but Verify](https://github.com/ericg1212/ai-healthcare-pipeline) | Clinical AI governance — LLM enrichment + rules engine cross-validation, every routing decision explainable | Live |
-| **[Cleared *(this project)*](https://github.com/ericg1212/agentic-rcm-pipeline)** | Real-time prior auth prevention — RAG-enhanced payer criteria matching at point of submission, streaming ingestion | Live |
+| **[Cleared *(this project)*](https://github.com/ericg1212/agentic-rcm-pipeline)** | Real-time prior auth prevention — in-memory payer criteria matching at point of submission, streaming ingestion | Live |
 
 ---
 
-**Claim denials are one of healthcare's largest preventable revenue leaks, costing U.S. providers well over $100B a year in rework and write-offs.** This pipeline intercepts claims in real time — before they leave the practice — and prevents the two largest denial root causes: NCCI coding violations and prior authorization gaps. Every claim is scored against real NCCI edits and RAG-retrieved payer authorization criteria using Claude API tool-use. The system autonomously corrects, flags, or escalates — each action citing the governing rule in an immutable audit log. Prevention impact is measured, not estimated: a 10% holdout control arm makes the clean-claim-rate lift provable.
+**Claim denials are one of healthcare's largest preventable revenue leaks, costing U.S. providers well over $100B a year in rework and write-offs.** This pipeline intercepts claims in real time — before they leave the practice — and prevents the two largest denial root causes: NCCI coding violations and prior authorization gaps. Every claim is scored against real NCCI edits and in-memory LCD/NCD payer authorization criteria using LLM tool-use. The system autonomously corrects, flags, or escalates — each action citing the governing rule in an immutable audit log. Prevention impact is measured, not estimated: a 10% holdout control arm makes the clean-claim-rate lift provable.
 
 ---
 
@@ -50,19 +50,21 @@ Every scored claim logs `input_tokens`, `output_tokens`, and `cost_usd` to the s
 
 ```mermaid
 flowchart LR
-    G["Live Claim Generator\nreal CMS 2024 distributions\nPoisson arrival · 35% dirty injection"]
-    K[("Kafka  claims.raw\n6 partitions · key=payer_id\nAvro + Schema Registry")]
-    N{"NCCI Gate\nPTP edits + MUE limits\ndeterministic · sub-ms"}
-    CLR["Clearinghouse\n(pass / corrected)"]
-    SC[("claims.scored\n→ Layer 2")]
-    AC[("claims.actions\n→ Layer 3")]
-    DLQ["DLQ\nschema violations"]
-    RC[("rules.control\ncompacted topic\nNCI hot-swap")]
-    AR{"Action Router\nholdout bypass · kill-switch\nescalate · auto-correct · flag"}
-    AUDIT[("Audit Log\nimmutable · rule_cited")]
-    HQ["Human Queue\nescalation draft + rationale"]
-    AO[("adjudications.outcomes\n← payer ERA/835")]
-    FB["Drift Monitor + Lift Calculator\nbaseline 100 · window 50\n>20% drift → kill-switch"]
+    G["Live Claim Generator<br/>CMS 2024 distributions<br/>Poisson arrival - 35% dirty"]
+    K[("Kafka: claims.raw<br/>6 partitions, key=payer_id<br/>Avro + Schema Registry")]
+    N{"NCCI Gate<br/>PTP edits + MUE<br/>deterministic, sub-ms"}
+    CLR["Clearinghouse<br/>pass / corrected"]
+    SC[("claims.scored<br/>Layer 2")]
+    AC[("claims.actions<br/>Layer 3")]
+    DLQ["DLQ<br/>schema violations"]
+    RC[("rules.control<br/>compacted, hot-swap")]
+    AR{"Action Router<br/>holdout bypass<br/>auto-correct / escalate"}
+    AUDIT[("Audit Log<br/>immutable, rule_cited")]
+    HQ["Human Queue<br/>escalation + rationale"]
+    AO[("adjudications.outcomes<br/>payer ERA/835")]
+    FB["Drift Monitor<br/>window 50 vs baseline 100<br/>20pct+ drift fires kill-switch"]
+    PRG[("PayerRuleGraph<br/>LCD/NCD cache<br/>PA Pre-Check")]
+    CAL["CalibrationMonitor<br/>Platt scaling + ECE<br/>FCA risk gate"]
 
     G -->|Avro| K
     RC -->|quarterly edition| N
@@ -71,14 +73,17 @@ flowchart LR
     N -->|ambiguous / high-value| SC
     N -->|hard fail| AC
     N -->|schema error| DLQ
-    SC -->|Claude tool-use| AC
+    PRG -->|PA criteria| SC
+    SC -->|LLM tool-use| AC
+    CAL -.->|calibrated score| SC
     AC --> AR
-    AR -->|pass · auto_correct| CLR
-    AR -->|escalate · flag| HQ
+    AR -->|pass / auto-correct| CLR
+    AR -->|escalate / flag| HQ
     AR -.->|every action| AUDIT
     CLR & HQ -.->|days/weeks later| AO
     AO --> FB
-    FB -.->|breach| AR
+    FB -.->|drift breach| AR
+    AO -.->|outcomes| CAL
 ```
 
 **Layer 1 — Foundation:**
