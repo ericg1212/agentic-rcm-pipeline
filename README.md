@@ -167,7 +167,4 @@ Download real NCCI quarterly CSVs from CMS and place in `data/ncci/`. Seed files
 - [ADR-003: Latency model and LLM trigger gate](docs/adrs/ADR-003-latency-llm-gate.md)
 - [ADR-004: Action routing — 3-condition auto-correct gate](docs/adrs/ADR-004-action-routing-thresholds.md)
 - [ADR-005: Drift window sizing and kill-switch threshold](docs/adrs/ADR-005-drift-window-sizing.md)
-- [ADR-006: Rule graph storage — Snowflake + in-memory cache](docs/adrs/ADR-006-rule-graph-storage.md)
-- [ADR-007: PA pre-check integration — extend ScoringResult](docs/adrs/ADR-007-pa-integration.md)
-- [ADR-008: Confidence calibration algorithm — Platt scaling](docs/adrs/ADR-008-calibration-algorithm.md)
 
