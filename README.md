@@ -19,7 +19,7 @@
 
 ---
 
-Denied classified denials retrospectively. Trust but Verify adds AI governance. Cleared prevents the denial before it happens.
+Denied classifies denials retrospectively. Trust but Verify adds AI governance. Cleared prevents the denial before it happens.
 
 | Pipeline | Focus | Status |
 |---|---|---|
@@ -106,6 +106,14 @@ flowchart LR
 - Drift monitor: rolling 50-outcome window vs. 100-outcome baseline; >20% relative change activates kill-switch; returns `None` on cold start — no false alarms while warming up
 - Streamlit dashboard: kill-switch control panel, action distribution, live lift analysis, drift status, recent audit log tail; `DEMO_MODE` for public preview
 
+**Phase 2 — Adaptive Intelligence:**
+- Payer Rule Intelligence Layer: `PayerRuleGraph` in-memory LCD/NCD cache backed by Snowflake `RAW.PAYER_RULES` — sub-10ms rule retrieval per claim; daily LCD ingestion per MAC, weekly NCD ingestion; `stg_payer_rules` + `fct_coverage_policy_changes` dbt models track rule churn over time
+- PA Pre-Check Module: `check_prior_auth_required` tool injected into the Layer 2 tool loop — surfaces prior-auth risk (CARC CO-197) at point of scoring, governed by CMS-0057-F; `ScoringResult` carries `pa_required`, `pa_approval_likelihood`, `pa_criteria_met`; router escalates PA-flagged claims with governing rule cited
+- Confidence Calibration: `CalibrationMonitor` (Platt scaling + ECE metric) — corrects systematic over/under-confidence in LLM scores; FCA risk gate blocks auto-correct when calibrated confidence < 0.92; `fct_calibration_curve` dbt mart; calibration checkpoints logged to `RAW.CALIBRATION_CHECKPOINTS`
+- Denial Pattern Clustering: `DenialClusterAnalyzer` (DBSCAN) — surfaces recurring denial patterns from `RAW.DENIAL_CLUSTERS`; `fct_denial_clusters` dbt mart; cluster insights feed upstream prompt refinement
+- Great Expectations Validation Suite: schema-level contract on every LLM output — `risk_score` bounds [0–100], `confidence` range [0–1], CARC enum membership, `action` field values; rejects malformed outputs before they reach the action router
+- Self-Healing Dagster Sensors: denial-rate spike detection triggers automated re-scoring and alert suppression before human escalation — "agentic" at the infrastructure layer, not just the claim layer
+
 ---
 
 ## Stack
@@ -159,4 +167,7 @@ Download real NCCI quarterly CSVs from CMS and place in `data/ncci/`. Seed files
 - [ADR-003: Latency model and LLM trigger gate](docs/adrs/ADR-003-latency-llm-gate.md)
 - [ADR-004: Action routing — 3-condition auto-correct gate](docs/adrs/ADR-004-action-routing-thresholds.md)
 - [ADR-005: Drift window sizing and kill-switch threshold](docs/adrs/ADR-005-drift-window-sizing.md)
+- [ADR-006: Rule graph storage — Snowflake + in-memory cache](docs/adrs/ADR-006-rule-graph-storage.md)
+- [ADR-007: PA pre-check integration — extend ScoringResult](docs/adrs/ADR-007-pa-integration.md)
+- [ADR-008: Confidence calibration algorithm — Platt scaling](docs/adrs/ADR-008-calibration-algorithm.md)
 
