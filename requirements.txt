@@ -1,6 +1,6 @@
 # Full declared stack for the end-state system (all 4 layers). CI does NOT
 # install from this file -- see requirements-layer1.txt for what's actually
-# tested today. Known blocker for later layers: great-expectations==0.18.19
+# tested today. Known blocker for later layers: great-expectations==0.18.22
 # hard-pins numpy<2.0, which conflicts with pandas/pyarrow/snowflake-connector
 # needing numpy>=2.1 for Python 3.13 wheels. great-expectations 1.0+ supports
 # numpy 2.x but is a breaking API rewrite -- resolve deliberately when the
@@ -23,7 +23,7 @@ snowflake-connector-python[pandas]==4.6.0
 snowflake-sqlalchemy==1.6.1
 
 # Quality
-great-expectations==0.18.19
+great-expectations==0.18.22
 
 # Config
 python-dotenv==1.2.2
