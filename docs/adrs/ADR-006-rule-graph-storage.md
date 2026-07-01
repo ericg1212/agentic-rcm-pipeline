@@ -1,69 +1,30 @@
 # ADR-006: Rule Graph Storage — Snowflake + In-Memory Cache
 
 **Status:** Accepted  
-**Date:** 2026-06-29  
-**Decider:** Eric Grynspan  
-**Component:** Phase 2 — Payer Rule Intelligence Layer  
-
----
-
-## Context
-
-The Payer Rule Intelligence Layer needs to store and serve NCD/LCD coverage policies at claim-scoring time. The system must:
-
-- Retrieve payer-specific coverage rules in <10ms per claim (sub-second scoring is the SLA)
-- Ingest CMS Coverage API updates on different cadences (NCD: weekly; LCD: daily per MAC)
-- Version rule changes for audit trail and FCA defensibility
-- Be queryable by dbt for coverage policy change analytics
-
-Three options were evaluated.
-
----
-
-## Options
-
-### Option A: Snowflake RAW.PAYER_RULES + In-Memory Cache (Chosen)
-
-Rules are written to `RAW.PAYER_RULES` by Dagster ingestion ops. At startup, `PayerRuleGraph.load_from_seed()` reads all active rules into a nested in-memory dict `{hcpcs_code: {contractor_id: list[RuleEntry]}}`. Lookups are sub-millisecond. Dagster daily sensor triggers `reload()` to refresh the cache.
-
-**dbt coverage:** `stg_payer_rules` + `fct_coverage_policy_changes` track first-seen, last-changed, and distinct rule states per (procedure, contractor) pair.
-
-### Option B: Neo4j Graph Database
-
-Store rules as a property graph (Procedure nodes → Rule edges → MAC nodes). Native graph traversal for NCD/LCD hierarchy.
-
-### Option C: Static JSON Files Only
-
-Extend the existing seed JSON files. No Snowflake table, no ingestion cadence.
+**Date:** 2026-06-29 (Phase 2 build — Payer Rule Intelligence Layer)  
+**Decider:** Eric Grynspan
 
 ---
 
 ## Decision
 
-**Option A: Snowflake + In-Memory Cache.**
+Coverage rules live in Snowflake `RAW.PAYER_RULES` (written by Dagster ingestion ops; append-friendly upsert on RULE_ID so every policy version is retained) and are served at scoring time from an in-memory cache: `PayerRuleGraph` loads all active rules into a nested dict `{hcpcs_code: {contractor_id: list[RuleEntry]}}` at startup. A Dagster sensor triggers `reload()` on ingestion — no per-claim Snowflake hit.
 
----
+## Why
 
-## Rationale
+The layer must serve payer-specific NCD/LCD rules in <10ms per claim while ingesting CMS Coverage API updates on two cadences (NCD weekly, LCD daily per MAC) and versioning every change for the audit trail. The split does each job with the right tool: Snowflake provides durable, versioned, dbt-queryable storage (`stg_payer_rules` + `fct_coverage_policy_changes` track first-seen, last-changed, and distinct rule states per procedure/contractor pair — "which procedures changed coverage policy in the last 30 days?" is a mart query); the in-memory dict provides sub-millisecond lookups on the hot path. The relationship cardinality (procedure → MAC → rule) is simple enough that a flat table plus a joining dict is fully equivalent to a graph store. Offline and CI runs load from seed JSON via `load_from_seed()` — no Snowflake connection required.
 
-| Criterion | Snowflake + Cache | Neo4j | Static JSON |
+| Criterion | Snowflake + cache | Neo4j | Static JSON |
 |---|---|---|---|
-| Lookup latency | Sub-ms (in-memory) | Network round-trip ~5ms | Sub-ms |
-| Stack consistency | Already in stack | New infra, new ops | No Snowflake |
+| Lookup latency | Sub-ms (in-memory) | ~5ms network round-trip | Sub-ms |
+| Stack consistency | Already in stack | New infra, new ops | No warehouse layer |
 | dbt support | Full (stg + mart models) | None | None |
 | Ingestion cadence | Dagster op per source type | Custom connector needed | Manual file update |
-| Rule versioning / audit trail | Native (append-only table) | Native but isolated | None |
-| Operational risk | Low | Medium (new infra, oncall) | Low but no audit trail |
+| Versioning / audit trail | Native (append-only table) | Native but isolated | None |
 
-Neo4j rejected: introduces new infrastructure with no operational precedent in this stack, and the relationship cardinality (procedure → MAC → rule) is simple enough that a flat table with a joining dict is equivalent. dbt cannot query Neo4j.
+## Rejected
 
-Static JSON rejected: no ingestion cadence, no delta tracking, no audit trail for FCA defensibility. The "rule changed on date X" question cannot be answered.
-
----
-
-## Consequences
-
-- `RAW.PAYER_RULES` schema is append-friendly (upsert on RULE_ID) — every ingested policy version is retained for audit.
-- Cache reload is triggered by Dagster sensor, not by scoring requests — no per-claim Snowflake hit.
-- Offline / CI tests use `load_from_seed()` with the seed JSON — no Snowflake connection required.
-- `fct_coverage_policy_changes` mart answers: "which procedures changed coverage policy in the last 30 days?" — directly usable in clinical informatics reporting.
+| Alternative | Why rejected |
+|---|---|
+| **Neo4j graph database** | New infrastructure with no operational precedent in this stack; dbt cannot query it; and the procedure → MAC → rule cardinality is simple enough that a flat table with an in-memory dict is equivalent — graph traversal buys nothing here |
+| **Static JSON files only** | No ingestion cadence, no delta tracking, no audit trail — "when did this rule change?" cannot be answered, which fails the FCA documentation requirement |

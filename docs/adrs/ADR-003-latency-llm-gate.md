@@ -12,15 +12,15 @@ Two-tier latency model: (1) deterministic NCCI gate — sub-millisecond per clai
 
 ## Why
 
-The pre-submission window is the intervention point — a claim sitting in a clearinghouse queue for 10 seconds is still actionable. Seconds/near-real-time is the right latency class: fast enough to intervene before submission, honest about the LLM API call being in the hot path. Micro-batch (minutes) loses the pre-submission window. Sub-second real-time (Redpanda + cached LLM) is over-engineered at P4 claim volume.
+The pre-submission window is the intervention point — a claim sitting in a clearinghouse queue for 10 seconds is still actionable. Seconds/near-real-time is the right latency class: fast enough to intervene before submission, honest about the LLM API call being in the hot path. Micro-batch (minutes) loses the pre-submission window. Sub-second real-time (Redpanda + cached LLM) is over-engineered at this claim volume.
 
-The deterministic gate is the cost and latency defense: "I don't call the LLM on every claim. NCCI catches the confident majority in under a millisecond. The LLM only sees the ambiguous slice — that's both the cost control and the ROI story." At 35% dirty-claim rate and 70% of violations being clear NCCI hard-fails, the actual LLM-touch rate is approximately 10–15% of total claim volume.
+The deterministic gate is the cost and latency control: NCCI resolves the confident majority in under a millisecond, and only the ambiguous slice reaches the LLM. At 35% dirty-claim rate and 70% of violations being clear NCCI hard-fails, the actual LLM-touch rate is approximately 10–15% of total claim volume.
 
 ## Rejected
 
 | Alternative | Why rejected |
 |---|---|
-| **Call LLM on every claim** | Defensible if cost is secondary; not defensible at scale ($0.003/claim × 1M claims/month = $3K/month just for LLM). Removes the gate as a cost-control story and weakens the "why not just rules" justification — if you're calling the LLM anyway, the gate has no value |
+| **Call LLM on every claim** | Defensible if cost is secondary; not defensible at scale ($0.003/claim × 1M claims/month = $3K/month just for LLM). If every claim reaches the LLM anyway, the deterministic layer adds no routing value and the cost control disappears |
 | **Micro-batch (Dagster scheduled run)** | Loses the pre-submission intervention window. A claim in a batch run at T+5 minutes may have already been submitted and adjudicated |
-| **Pre-score with XGBoost, skip NCCI gate** | Right call at Phase 3 production scale (100K+ claims/day). Premature for MVP: adds ML training infrastructure without interview story clarity. The NCCI gate is a deterministic first-principles check; XGBoost is a learned approximation. Both have a role — NCCI catches what's definitively wrong, XGBoost triage would optimize LLM call routing at scale |
+| **Pre-score with XGBoost, skip NCCI gate** | Right call at Phase 3 production scale (100K+ claims/day). Premature for v1: adds ML training infrastructure before the outcome store has labels to train on. The NCCI gate is a deterministic first-principles check; XGBoost is a learned approximation. Both have a role — NCCI catches what's definitively wrong, XGBoost triage would optimize LLM call routing at scale |
 

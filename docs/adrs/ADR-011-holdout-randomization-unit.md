@@ -1,7 +1,7 @@
 # ADR-011: Holdout Randomization Unit — Provider-Level Cluster Assignment
 
-**Status:** Accepted
-**Date:** 2026-07-01 (architecture review session)
+**Status:** Accepted  
+**Date:** 2026-07-01 (architecture review session)  
 **Decider:** Eric Grynspan
 
 ---
