@@ -1,10 +1,8 @@
 # Copyright (c) 2026 Eric Grynspan. All rights reserved.
 """Tests for ScoringResultValidator — inline and batch validation paths."""
-import pytest
 
 from src.validation.scoring_suite import (
     ScoringResultValidator,
-    ValidationResult,
     VALID_ACTIONS,
 )
 

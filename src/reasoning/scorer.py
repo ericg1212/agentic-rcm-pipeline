@@ -12,6 +12,12 @@ Agentic tool-use pattern (the "why not just rules?" answer):
   5. We validate the output: risk_score bounds, CARC enum, action enum
   6. On any validation failure: deterministic fallback from gate decision + dead-letter
 
+Retry policy: transient API failures (429 rate limit, 5xx, timeouts) get
+LLMConfig.MAX_RETRIES attempts with the SDK's exponential backoff + jitter
+before the deterministic fallback fires. The fallback is the last resort,
+not the first response to a rate-limit blip — used_fallback rates stay
+meaningful in the drift monitor.
+
 Why temperature=0: same claim + same inputs = same score. Reproducibility is an audit
 requirement. The input_hash + model_id + prompt_version stamps every result for replay.
 
@@ -129,7 +135,11 @@ class ClaimScorer:
     """
 
     def __init__(self, ncci_gate) -> None:
-        self._client = anthropic.Anthropic(api_key=LLMConfig.API_KEY)
+        self._client = anthropic.Anthropic(
+            api_key=LLMConfig.API_KEY,
+            max_retries=LLMConfig.MAX_RETRIES,
+            timeout=LLMConfig.TIMEOUT_S,
+        )
         self._tool_registry = ToolRegistry(ncci_gate)
         self._carc_codes = _load_carc_codes()
         self._submit_tool = self._build_submit_tool()

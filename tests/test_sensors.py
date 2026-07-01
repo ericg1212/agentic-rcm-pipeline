@@ -1,15 +1,12 @@
 # Copyright (c) 2026 Eric Grynspan. All rights reserved.
 """Tests for SelfHealingSensor — spike detection, diagnosis, and remediation."""
 from datetime import datetime, timezone, timedelta
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock
 
-import pytest
 
 from src.action.kill_switch import KillSwitch
 from src.dagster_jobs.sensors import (
     SelfHealingSensor,
-    SensorResult,
-    MIN_PAYER_OUTCOMES,
     PAYER_SPIKE_THRESHOLD,
 )
 from src.feedback.outcome_store import OutcomeRecord
