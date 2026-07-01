@@ -1,7 +1,7 @@
 # ADR-010: Kill-Switch State Distribution — Compacted Control Topic
 
-**Status:** Accepted
-**Date:** 2026-07-01 (architecture review session)
+**Status:** Accepted  
+**Date:** 2026-07-01 (architecture review session)  
 **Decider:** Eric Grynspan
 
 ---

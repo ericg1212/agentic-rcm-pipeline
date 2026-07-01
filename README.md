@@ -2,11 +2,11 @@
 
 [![CI](https://github.com/ericg1212/agentic-rcm-pipeline/actions/workflows/ci.yml/badge.svg)](https://github.com/ericg1212/agentic-rcm-pipeline/actions/workflows/ci.yml)
 [![codecov](https://codecov.io/gh/ericg1212/agentic-rcm-pipeline/branch/master/graph/badge.svg)](https://codecov.io/gh/ericg1212/agentic-rcm-pipeline)
-[![Release](https://img.shields.io/github/v/release/ericg1212/agentic-rcm-pipeline?style=flat-square)](https://github.com/ericg1212/agentic-rcm-pipeline/releases)
+[![Release](https://img.shields.io/github/v/release/ericg1212/agentic-rcm-pipeline)](https://github.com/ericg1212/agentic-rcm-pipeline/releases)
 [![Python 3.13](https://img.shields.io/badge/python-3.13-blue.svg)](https://www.python.org/downloads/)
 [![Kafka](https://img.shields.io/badge/kafka-3.8.0_KRaft-231F20?logo=apache-kafka&logoColor=white)](https://kafka.apache.org/)
 [![Snowflake](https://img.shields.io/badge/snowflake-warehouse-29B5E8?logo=snowflake&logoColor=white)](https://snowflake.com)
-[![dbt](https://img.shields.io/badge/dbt-staging%20%2B%20mart-FF694B?logo=dbt&logoColor=white)](https://www.getdbt.com/)
+[![dbt](https://img.shields.io/badge/dbt-staging%20%2B%20mart-FF694B)](https://www.getdbt.com/)
 [![Claude API](https://img.shields.io/badge/claude-sonnet--4--6-5A67D8)](https://anthropic.com)
 
 ![pytest](https://img.shields.io/badge/pytest-251%20passing-0A9EDC?style=flat-square&logo=pytest&logoColor=white)
@@ -46,7 +46,7 @@ Every scored claim logs `input_tokens`, `output_tokens`, and `cost_usd` to the s
 
 ---
 
-## What's Built (Layers 1–4)
+## What's Built
 
 ```mermaid
 flowchart LR

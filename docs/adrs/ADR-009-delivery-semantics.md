@@ -1,7 +1,7 @@
 # ADR-009: Consumer Delivery Semantics — At-Least-Once with Effect Deduplication
 
-**Status:** Accepted
-**Date:** 2026-07-01 (architecture review session)
+**Status:** Accepted  
+**Date:** 2026-07-01 (architecture review session)  
 **Decider:** Eric Grynspan
 
 ---
