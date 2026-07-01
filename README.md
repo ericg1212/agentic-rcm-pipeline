@@ -9,7 +9,7 @@
 [![dbt](https://img.shields.io/badge/dbt-staging%20%2B%20mart-FF694B?logo=dbt&logoColor=white)](https://www.getdbt.com/)
 [![Claude API](https://img.shields.io/badge/claude-sonnet--4--6-5A67D8)](https://anthropic.com)
 
-![pytest](https://img.shields.io/badge/pytest-216%20passing-0A9EDC?style=flat-square&logo=pytest&logoColor=white)
+![pytest](https://img.shields.io/badge/pytest-235%20passing-0A9EDC?style=flat-square&logo=pytest&logoColor=white)
 ![Cost per Claim](https://img.shields.io/badge/cost%2Fclaim-%240.003-22c55e?style=flat-square)
 ![ROI](https://img.shields.io/badge/ROI-50%2C000x-d97706?style=flat-square)
 ![LLM Touch Rate](https://img.shields.io/badge/LLM%20touch%20rate-~15%25-8b5cf6?style=flat-square)
@@ -92,9 +92,11 @@ flowchart LR
 - Compacted `rules.control` topic: NCCI quarterly editions hot-swapped without consumer downtime
 - 10% holdout stamped at source (`is_holdout` in Avro schema) — control arm for provable ROI
 - Snowflake RAW: 5 append-only tables including immutable `ACTION_LOG` and `ADJUDICATION_OUTCOMES`
+- At-least-once delivery, effect-deduplicated: offsets stored per message after successful processing, committed in batches behind a producer flush barrier — a crash replays at most one batch; dedup marks only after successful emit, so dead-lettered claims stay redeliverable
+- Poison messages dead-letter with their raw bytes (base64) and stored offsets — inspectable, replayable, and never wedge the partition; every produce carries a delivery callback, so a failed delivery dead-letters instead of dropping
 
 **Layer 2 — Intelligence:**
-- Claude API tool-use scorer: 5-tool loop (NCCI edit lookup, LCD policy, modifier check, payer history, submit decision), temperature=0, SHA-256 input hash for replay
+- Claude API tool-use scorer: 5-tool loop (NCCI edit lookup, LCD policy, modifier check, payer history, submit decision), temperature=0, SHA-256 input hash for replay; bounded retry with exponential backoff + jitter on transient API failures before the deterministic fallback fires
 - CARC enum enforced at schema boundary — hallucinated denial codes rejected before scoring
 - Noise injection eval: wrong-diagnosis dirty claims pass the deterministic gate; LLM recovers via `get_lcd_policy` — proves LLM lift
 - dbt staging (3 views) + `fct_claim_risk_scores` mart with holdout/intervention/deterministic cohort column for lift calculation
@@ -158,7 +160,7 @@ make up          # Kafka + Schema Registry + UI (http://localhost:8080)
 cp .env.example .env && make install
 make producer    # start live claim generator
 make consumer    # start NCCI gate consumer
-make test        # 216 tests
+make test        # 235 tests
 ```
 
 Download real NCCI quarterly CSVs from CMS and place in `data/ncci/`. Seed files included for dev.

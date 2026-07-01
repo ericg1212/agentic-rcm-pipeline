@@ -30,7 +30,6 @@ from typing import Optional
 
 import numpy as np
 import structlog
-from scipy.spatial.distance import cdist
 from sklearn.cluster import DBSCAN
 from sklearn.preprocessing import StandardScaler
 

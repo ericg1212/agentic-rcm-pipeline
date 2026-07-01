@@ -15,7 +15,10 @@ class KafkaConfig:
     BOOTSTRAP_SERVERS = os.getenv("KAFKA_BOOTSTRAP_SERVERS", "localhost:9092")
     SCHEMA_REGISTRY_URL = os.getenv("SCHEMA_REGISTRY_URL", "http://localhost:8081")
     CONSUMER_GROUP_ID = os.getenv("CONSUMER_GROUP_ID", "rcm-prevention-v1")
-    MAX_POLL_RECORDS = int(os.getenv("MAX_POLL_RECORDS", "50"))
+    # Offsets are stored per-message after successful processing and committed
+    # in batches — this bounds the replay window after a crash to one batch.
+    COMMIT_BATCH_SIZE = int(os.getenv("COMMIT_BATCH_SIZE", "100"))
+    PRODUCER_FLUSH_TIMEOUT_S = float(os.getenv("PRODUCER_FLUSH_TIMEOUT_S", "5.0"))
 
     # Topic names — single source of truth
     TOPIC_CLAIMS_RAW = "claims.raw"
@@ -39,6 +42,12 @@ class LLMConfig:
     # Per-million-token pricing for cost-per-claim analytics
     INPUT_COST_PER_MTOK = 3.0    # $/MTok, claude-sonnet-4-6
     OUTPUT_COST_PER_MTOK = 15.0  # $/MTok, claude-sonnet-4-6
+    # Bounded retry (SDK exponential backoff + jitter) on 429/5xx/timeouts
+    # before the deterministic fallback fires. Availability over accuracy:
+    # a transient rate-limit storm should not convert the reasoning layer
+    # into the rules engine without a fight.
+    MAX_RETRIES = int(os.getenv("LLM_MAX_RETRIES", "3"))
+    TIMEOUT_S = float(os.getenv("LLM_TIMEOUT_S", "30.0"))
 
 
 class SnowflakeConfig:
@@ -57,6 +66,9 @@ class GateConfig:
     LLM_RISK_THRESHOLD = float(os.getenv("LLM_RISK_THRESHOLD", "0.30"))
     # Fraction of all claims routed to control arm (no intervention)
     HOLDOUT_FRACTION = float(os.getenv("HOLDOUT_FRACTION", "0.10"))
+    # HARD_FAIL claims above this charge get LLM rationale enrichment;
+    # below it a deterministic flag is sufficient (cost gate, ADR-003)
+    HIGH_VALUE_CHARGE_USD = float(os.getenv("HIGH_VALUE_CHARGE_USD", "300.00"))
 
 
 class ActionConfig:

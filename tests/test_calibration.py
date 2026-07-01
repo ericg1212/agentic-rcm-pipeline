@@ -6,10 +6,8 @@ Covers: ECE computation, Platt fitting, FCA risk detection, checkpoint structure
 from __future__ import annotations
 
 import numpy as np
-import pytest
 
 from src.feedback.calibration import CalibrationMonitor, CalibrationCheckpoint
-from src.config.settings import CalibrationConfig
 
 
 # ---------------------------------------------------------------------------

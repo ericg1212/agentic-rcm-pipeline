@@ -13,11 +13,8 @@ import pytest
 
 from src.feedback.cluster_analyzer import (
     DenialClusterAnalyzer,
-    DenialClusterRecord,
-    ClusterSummary,
     _extract_features,
 )
-from src.config.settings import ClusterConfig
 
 
 # ---------------------------------------------------------------------------
@@ -69,7 +66,6 @@ class TestExtractFeatures:
         assert all(np.isfinite(features).flatten())
 
     def test_empty_outcomes_returns_empty_array(self):
-        import numpy as np
         features = _extract_features([])
         assert features.shape[0] == 0
 
@@ -156,7 +152,6 @@ class TestNewPatternDetection:
         assert all(s.cluster_id != -1 for s in new_patterns)
 
     def test_old_cluster_not_flagged(self):
-        old_time = (datetime.now(timezone.utc) - timedelta(days=30)).isoformat()
         outcomes = [_make_outcome(scored_at=datetime.now(timezone.utc) - timedelta(days=30)) for _ in range(60)]
         analyzer = DenialClusterAnalyzer(outcomes)
         _, summaries = analyzer.fit()
