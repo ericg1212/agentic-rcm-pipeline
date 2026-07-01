@@ -14,12 +14,18 @@ Activation triggers (any one is sufficient):
   - Auto-correct rate spike (runaway autonomy signal)
   - Manual trigger (ops team, on-call)
 
-State is in-process for v1. Production upgrade: back with Redis or a Snowflake
-control record so all consumer instances share the same switch state.
+State distribution (ADR-010): pass a KillSwitchStore to share state across
+replicas — production uses the compacted control.kill-switch Kafka topic
+(same hot-swap pattern as rules.control). Every is_active check syncs the
+latest published state, so activating the switch on any replica flags all
+of them within seconds. Without a store, state is process-local (tests,
+single-process dev).
 """
 from __future__ import annotations
 
 import structlog
+
+from src.action.kill_switch_store import KillSwitchStore
 
 log = structlog.get_logger(__name__)
 
@@ -28,18 +34,20 @@ class KillSwitch:
     """
     Single-lever autonomy kill-switch for the action layer.
 
-    Thread-safe for single-process use. In production, back with a shared
-    control store (Redis SETNX or a Snowflake control table) so all replicas
-    see the same state.
+    With a store, the single-lever guarantee holds across replicas: state
+    changes publish to the store, and every is_active read applies the
+    latest published state before answering.
     """
 
-    def __init__(self) -> None:
+    def __init__(self, store: KillSwitchStore | None = None) -> None:
+        self._store = store
         self._active: bool = False
         self._reason: str | None = None
         self._activation_count: int = 0
 
     @property
     def is_active(self) -> bool:
+        self._sync()
         return self._active
 
     @property
@@ -64,6 +72,8 @@ class KillSwitch:
                 reason=reason,
                 activation_count=self._activation_count,
             )
+        if self._store is not None:
+            self._store.publish(True, reason)
 
     def deactivate(self) -> None:
         """
@@ -75,10 +85,40 @@ class KillSwitch:
             prev_reason = self._reason
             self._reason = None
             log.info("kill_switch_deactivated", was_reason=prev_reason)
+        if self._store is not None:
+            self._store.publish(False, None)
 
     def status(self) -> dict:
+        self._sync()
         return {
             "active": self._active,
             "reason": self._reason,
             "activation_count": self._activation_count,
+            "distributed": self._store is not None,
         }
+
+    def _sync(self) -> None:
+        """Apply the latest state published by any replica. No-op without a store."""
+        if self._store is None:
+            return
+        state = self._store.poll_latest()
+        if state is None or state.get("active") == self._active:
+            return
+        if state["active"]:
+            self._active = True
+            self._reason = state.get("reason")
+            self._activation_count += 1
+            log.warning(
+                "kill_switch_remote_activation",
+                reason=self._reason,
+                changed_at=state.get("changed_at"),
+            )
+        else:
+            prev_reason = self._reason
+            self._active = False
+            self._reason = None
+            log.info(
+                "kill_switch_remote_deactivation",
+                was_reason=prev_reason,
+                changed_at=state.get("changed_at"),
+            )

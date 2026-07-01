@@ -9,7 +9,7 @@
 [![dbt](https://img.shields.io/badge/dbt-staging%20%2B%20mart-FF694B?logo=dbt&logoColor=white)](https://www.getdbt.com/)
 [![Claude API](https://img.shields.io/badge/claude-sonnet--4--6-5A67D8)](https://anthropic.com)
 
-![pytest](https://img.shields.io/badge/pytest-235%20passing-0A9EDC?style=flat-square&logo=pytest&logoColor=white)
+![pytest](https://img.shields.io/badge/pytest-251%20passing-0A9EDC?style=flat-square&logo=pytest&logoColor=white)
 ![Cost per Claim](https://img.shields.io/badge/cost%2Fclaim-%240.003-22c55e?style=flat-square)
 ![ROI](https://img.shields.io/badge/ROI-50%2C000x-d97706?style=flat-square)
 ![LLM Touch Rate](https://img.shields.io/badge/LLM%20touch%20rate-~15%25-8b5cf6?style=flat-square)
@@ -90,7 +90,7 @@ flowchart LR
 - Live stochastic generator sampling real 2024 CMS Provider Utilization distributions
 - Deterministic NCCI PTP + MUE gate: `PASS` / `HARD_FAIL` / `AMBIGUOUS` — ~85% of claims never touch the LLM
 - Compacted `rules.control` topic: NCCI quarterly editions hot-swapped without consumer downtime
-- 10% holdout stamped at source (`is_holdout` in Avro schema) — control arm for provable ROI
+- 10% holdout randomized at the provider level (ADR-011): deterministic SHA-256 rank sample of the NPI roster — cluster randomization keeps intervention feedback from contaminating the control arm, and assignment is stable across restarts and replays
 - Snowflake RAW: 5 append-only tables including immutable `ACTION_LOG` and `ADJUDICATION_OUTCOMES`
 - At-least-once delivery, effect-deduplicated: offsets stored per message after successful processing, committed in batches behind a producer flush barrier — a crash replays at most one batch; dedup marks only after successful emit, so dead-lettered claims stay redeliverable
 - Poison messages dead-letter with their raw bytes (base64) and stored offsets — inspectable, replayable, and never wedge the partition; every produce carries a delivery callback, so a failed delivery dead-letters instead of dropping
@@ -105,7 +105,7 @@ flowchart LR
 - Tiered confidence-gated router: holdout bypass → kill-switch → escalation gate → 3-condition auto-correct gate → flag → pass
 - 3-condition auto-correct gate: LLM recommended + confidence ≥ 0.92 + charge ≤ $500 — FCA defense: action traces to governing rule, confidence floor defeats recklessness, dollar ceiling limits exposure
 - Immutable audit log — every action records `governing_rule_cited`; escalations include full LLM rationale draft for human sign-off; `reversible` flag on each record
-- Single-lever kill-switch — halts all auto-corrections instantly; system degrades to FLAG-only without silent failure; idempotent activate/deactivate
+- Single-lever kill-switch — halts all auto-corrections instantly; system degrades to FLAG-only without silent failure; idempotent activate/deactivate; state distributed across replicas via the compacted `control.kill-switch` topic (ADR-010) — the same hot-swap pattern as `rules.control`, so activating the switch anywhere flags claims everywhere within seconds
 
 **Layer 4 — Feedback:**
 - `adjudications.outcomes` Kafka consumer — closes the pre-submission → clearinghouse → payer → ERA loop; every outcome keyed by arm (intervention / holdout / deterministic)
@@ -160,7 +160,7 @@ make up          # Kafka + Schema Registry + UI (http://localhost:8080)
 cp .env.example .env && make install
 make producer    # start live claim generator
 make consumer    # start NCCI gate consumer
-make test        # 235 tests
+make test        # 251 tests
 ```
 
 Download real NCCI quarterly CSVs from CMS and place in `data/ncci/`. Seed files included for dev.
@@ -174,4 +174,10 @@ Download real NCCI quarterly CSVs from CMS and place in `data/ncci/`. Seed files
 - [ADR-003: Latency model and LLM trigger gate](docs/adrs/ADR-003-latency-llm-gate.md)
 - [ADR-004: Action routing — 3-condition auto-correct gate](docs/adrs/ADR-004-action-routing-thresholds.md)
 - [ADR-005: Drift window sizing and kill-switch threshold](docs/adrs/ADR-005-drift-window-sizing.md)
+- [ADR-006: Payer rule graph storage — Snowflake + in-memory cache](docs/adrs/ADR-006-rule-graph-storage.md)
+- [ADR-007: PA pre-check integration — same tool loop](docs/adrs/ADR-007-pa-integration.md)
+- [ADR-008: Confidence calibration — Platt scaling](docs/adrs/ADR-008-calibration-algorithm.md)
+- [ADR-009: Delivery semantics — at-least-once with effect dedup](docs/adrs/ADR-009-delivery-semantics.md)
+- [ADR-010: Kill-switch distribution — compacted control topic](docs/adrs/ADR-010-kill-switch-distribution.md)
+- [ADR-011: Holdout randomization — provider-level clusters](docs/adrs/ADR-011-holdout-randomization-unit.md)
 

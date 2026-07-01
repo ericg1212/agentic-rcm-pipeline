@@ -29,7 +29,7 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 import streamlit as st
 
 from src.action.audit import ImmutableAuditLog, AuditRecord
-from src.action.kill_switch import KillSwitch
+from src.action.kill_switch_store import build_kill_switch
 from src.feedback.drift_monitor import DriftMonitor
 from src.feedback.lift_calculator import LiftCalculator
 from src.feedback.outcome_store import AdjudicationOutcomeStore, OutcomeRecord
@@ -139,7 +139,7 @@ def main() -> None:
 
     store = _build_demo_store() if DEMO_MODE else AdjudicationOutcomeStore()
     audit_log = _build_demo_audit_log() if DEMO_MODE else ImmutableAuditLog()
-    kill_switch = KillSwitch()
+    kill_switch = build_kill_switch()
     lift_calc = LiftCalculator(store)
     drift_monitor = DriftMonitor(store, kill_switch)
 
