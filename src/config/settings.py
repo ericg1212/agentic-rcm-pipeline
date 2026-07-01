@@ -26,6 +26,7 @@ class KafkaConfig:
     TOPIC_CLAIMS_ACTIONS = "claims.actions"
     TOPIC_ADJUDICATIONS = "adjudications.outcomes"
     TOPIC_RULES_CONTROL = "rules.control"
+    TOPIC_KILL_SWITCH = "control.kill-switch"  # compacted — distributed kill-switch state (ADR-010)
     TOPIC_DLQ = "claims.dlq"
 
     # Partition key: payer_id ensures per-payer ordering for rule application consistency
@@ -64,8 +65,13 @@ class SnowflakeConfig:
 class GateConfig:
     # Minimum deterministic risk score to trigger LLM call (0–1 scale)
     LLM_RISK_THRESHOLD = float(os.getenv("LLM_RISK_THRESHOLD", "0.30"))
-    # Fraction of all claims routed to control arm (no intervention)
+    # Fraction routed to control arm (no intervention)
     HOLDOUT_FRACTION = float(os.getenv("HOLDOUT_FRACTION", "0.10"))
+    # Randomization unit for holdout assignment (ADR-011):
+    #   "provider" — deterministic 10% sample of the provider roster (default);
+    #                cluster randomization avoids within-provider contamination
+    #   "claim"    — per-claim Bernoulli draw (legacy)
+    HOLDOUT_UNIT = os.getenv("HOLDOUT_UNIT", "provider")
     # HARD_FAIL claims above this charge get LLM rationale enrichment;
     # below it a deterministic flag is sufficient (cost gate, ADR-003)
     HIGH_VALUE_CHARGE_USD = float(os.getenv("HIGH_VALUE_CHARGE_USD", "300.00"))

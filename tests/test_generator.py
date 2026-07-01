@@ -2,7 +2,13 @@
 """Tests for the live claim generator — validates statistical properties and schema compliance."""
 import pytest
 
-from src.generator.claim_generator import ClaimGenerator, ClaimEvent, NCCI_VIOLATION_PAIRS
+from src.generator.claim_generator import (
+    ClaimGenerator,
+    ClaimEvent,
+    NCCI_VIOLATION_PAIRS,
+    _holdout_roster,
+)
+from src.generator.distributions import SEED_NPIS
 from src.generator.distributions import SEED_PROCEDURE_WEIGHTS
 
 
@@ -65,3 +71,48 @@ def test_submitted_charge_is_decimal_string(generator):
     assert len(parts) == 2
     assert len(parts[1]) == 2
     assert float(claim.submitted_charge) > 0
+
+
+# ------------------------------------------------------------------
+# Provider-level holdout randomization (ADR-011)
+# ------------------------------------------------------------------
+
+def test_holdout_is_consistent_per_provider(generator):
+    """Cluster randomization: every claim from a given NPI lands in the same arm."""
+    arms: dict[str, set[bool]] = {}
+    for _ in range(500):
+        claim = generator.generate_one()
+        arms.setdefault(claim.provider_npi, set()).add(claim.is_holdout)
+    assert all(len(seen) == 1 for seen in arms.values()), (
+        "provider appears in both arms: "
+        + str({npi: seen for npi, seen in arms.items() if len(seen) > 1})
+    )
+
+
+def test_holdout_assignment_deterministic_across_instances():
+    """Same roster, same fraction: two generators agree on every provider's arm."""
+    g1 = ClaimGenerator(holdout_fraction=0.10, seed=1)
+    g2 = ClaimGenerator(holdout_fraction=0.10, seed=999)
+    for npi in SEED_NPIS:
+        assert g1._assign_holdout(str(npi)) == g2._assign_holdout(str(npi))
+
+
+def test_holdout_roster_hits_exact_fraction():
+    roster = _holdout_roster(SEED_NPIS, 0.10)
+    assert len(roster) == max(1, round(len(SEED_NPIS) * 0.10))
+
+
+def test_holdout_roster_zero_fraction_empty():
+    assert _holdout_roster(SEED_NPIS, 0.0) == frozenset()
+
+
+def test_unknown_npi_assignment_is_deterministic(generator):
+    npi = "9999999999"  # not in the seed roster
+    assert generator._assign_holdout(npi) == generator._assign_holdout(npi)
+
+
+def test_claim_unit_mode_still_supported():
+    g = ClaimGenerator(holdout_fraction=0.10, seed=42, holdout_unit="claim")
+    n = 1000
+    ratio = sum(1 for _ in range(n) if g.generate_one().is_holdout) / n
+    assert 0.05 <= ratio <= 0.15

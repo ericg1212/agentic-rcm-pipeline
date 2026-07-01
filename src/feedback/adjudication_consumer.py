@@ -26,7 +26,8 @@ from typing import Optional
 import structlog
 from confluent_kafka import Consumer, KafkaError, KafkaException
 
-from src.action.kill_switch import KillSwitch
+from src.action.kill_switch import KillSwitch  # noqa: F401 (re-export for tests)
+from src.action.kill_switch_store import build_kill_switch
 from src.config.settings import FeedbackConfig, KafkaConfig
 from src.feedback.drift_monitor import DriftMonitor
 from src.feedback.lift_calculator import LiftCalculator
@@ -51,7 +52,7 @@ class AdjudicationConsumer:
         kill_switch: Optional[KillSwitch] = None,
     ) -> None:
         self._store = outcome_store or AdjudicationOutcomeStore()
-        self._kill_switch = kill_switch or KillSwitch()
+        self._kill_switch = kill_switch or build_kill_switch()
         self._drift_monitor = DriftMonitor(
             outcome_store=self._store,
             kill_switch=self._kill_switch,

@@ -10,6 +10,7 @@ Design decisions documented in ADR-002 (data/ground-truth).
 """
 from __future__ import annotations
 
+import hashlib
 import time
 import uuid
 from dataclasses import dataclass
@@ -20,6 +21,7 @@ import structlog
 
 from src.config.settings import GateConfig, GeneratorConfig
 from src.generator.distributions import (
+    SEED_NPIS,
     ProcedureWeight,
     get_procedure_weights,
     sample_npi,
@@ -98,15 +100,20 @@ class ClaimGenerator:
         dirty_fraction: float = GeneratorConfig.DIRTY_CLAIM_FRACTION,
         ncci_edit_version: str = GeneratorConfig.NCCI_EDIT_VERSION,
         seed: int | None = None,
+        holdout_unit: str | None = None,
     ) -> None:
         self.holdout_fraction = holdout_fraction
         self.dirty_fraction = dirty_fraction
         self.ncci_edit_version = ncci_edit_version
+        self.holdout_unit = holdout_unit or GateConfig.HOLDOUT_UNIT
         self._rng = np.random.default_rng(seed)
         self._procedure_weights = get_procedure_weights()
+        self._holdout_npis = _holdout_roster(SEED_NPIS, holdout_fraction)
         log.info(
             "generator_initialized",
             holdout_fraction=holdout_fraction,
+            holdout_unit=self.holdout_unit,
+            holdout_providers=len(self._holdout_npis),
             dirty_fraction=dirty_fraction,
             procedure_pool_size=len(self._procedure_weights),
         )
@@ -114,11 +121,31 @@ class ClaimGenerator:
     def generate_one(self) -> ClaimEvent:
         """Generate a single claim event, potentially with deliberate NCCI violations."""
         is_dirty = self._rng.random() < self.dirty_fraction
-        is_holdout = self._rng.random() < self.holdout_fraction
 
-        if is_dirty:
-            return self._generate_dirty_claim(is_holdout)
-        return self._generate_clean_claim(is_holdout)
+        claim = self._generate_dirty_claim(False) if is_dirty else self._generate_clean_claim(False)
+        claim.is_holdout = self._assign_holdout(claim.provider_npi)
+        return claim
+
+    def _assign_holdout(self, provider_npi: str) -> bool:
+        """
+        Holdout arm assignment (ADR-011).
+
+        provider unit (default): cluster randomization — a deterministic
+        holdout_fraction sample of the provider roster, ranked by SHA-256 of
+        NPI. Every claim from a holdout provider is control, always: stable
+        across restarts and replays, and no within-provider arm mixing to
+        contaminate the intervention effect. NPIs outside the roster fall
+        back to a hash threshold so assignment stays deterministic.
+
+        claim unit (legacy): independent Bernoulli draw per claim.
+        """
+        if self.holdout_unit == "claim":
+            return bool(self._rng.random() < self.holdout_fraction)
+        if provider_npi in self._holdout_npis:
+            return True
+        if provider_npi not in SEED_NPIS:
+            return _npi_hash_bucket(provider_npi) < self.holdout_fraction
+        return False
 
     def generate_stream(self, events_per_second: float = GeneratorConfig.EVENTS_PER_SECOND):
         """
@@ -200,3 +227,27 @@ class ClaimGenerator:
         # Service dates within the last 30 days (realistic pre-submission window)
         days_back = int(self._rng.integers(0, 30))
         return (date.today() - timedelta(days=days_back)).isoformat()
+
+
+def _npi_hash_bucket(npi: str) -> float:
+    """Deterministic uniform [0,1) bucket for an NPI — stable across processes."""
+    digest = hashlib.sha256(str(npi).encode("utf-8")).hexdigest()
+    return int(digest, 16) % 10_000 / 10_000
+
+
+def _holdout_roster(registry, fraction: float) -> frozenset[str]:
+    """
+    Deterministic holdout provider set: rank the roster by SHA-256(NPI) and
+    take the lowest ceil(fraction × N). Rank-based (not threshold-based)
+    assignment hits the target fraction exactly on any roster size — a raw
+    hash threshold drifts badly on small rosters (25% realized at a 10%
+    target on a 20-provider pool).
+    """
+    if fraction <= 0:
+        return frozenset()
+    ranked = sorted(
+        (str(npi) for npi in registry),
+        key=lambda n: hashlib.sha256(n.encode("utf-8")).hexdigest(),
+    )
+    k = max(1, round(len(ranked) * fraction))
+    return frozenset(ranked[:k])
