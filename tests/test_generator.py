@@ -74,7 +74,7 @@ def test_submitted_charge_is_decimal_string(generator):
 
 
 # ------------------------------------------------------------------
-# Provider-level holdout randomization (ADR-011)
+# Provider-level holdout randomization (ADR-005)
 # ------------------------------------------------------------------
 
 def test_holdout_is_consistent_per_provider(generator):

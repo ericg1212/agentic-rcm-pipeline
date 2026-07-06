@@ -129,14 +129,10 @@ flowchart LR
 | Kafka over Kinesis / micro-batch | Pre-submission interception needs event-time streaming with per-payer ordering; compacted topics enable zero-downtime rule hot-swaps | [ADR-001](docs/adrs/ADR-001-kafka-vs-alternatives.md) |
 | Real CMS distributions over DE-SynPUF / Synthea | No public dataset carries claim-level denial codes — realness lives in the policy and distributions, not the rows | [ADR-002](docs/adrs/ADR-002-data-ground-truth.md) |
 | Deterministic gate in front of the LLM | The gate resolves the confident majority sub-millisecond; only ambiguity pays the ~300ms LLM call | [ADR-003](docs/adrs/ADR-003-latency-llm-gate.md) |
-| 3-condition auto-correct gate | Cited rule, confidence floor, and dollar ceiling map one-to-one onto FCA liability elements | [ADR-004](docs/adrs/ADR-004-action-routing-thresholds.md) |
-| Drift window 50 / threshold 20% | Enough denials per window for signal without noise; >20% relative drift is operationally significant, below is weekly variance | [ADR-005](docs/adrs/ADR-005-drift-window-sizing.md) |
-| Snowflake + in-memory cache for payer rules | Snowflake versions every policy change for the audit trail; an in-memory dict serves the <10ms hot path — a graph DB buys nothing at this cardinality | [ADR-006](docs/adrs/ADR-006-rule-graph-storage.md) |
-| PA pre-check inside the same tool loop | PA criteria live in the policy documents the loop already retrieves — one LLM call, one coherent risk picture | [ADR-007](docs/adrs/ADR-007-pa-integration.md) |
-| Platt scaling for calibration | Calibration is a legal control: documented overconfidence is FCA recklessness; two parameters fit the outcome volume without overfitting | [ADR-008](docs/adrs/ADR-008-calibration-algorithm.md) |
-| At-least-once delivery with effect dedup | A crash replays at most one batch; dedup marks only after successful emit, so dead-lettered claims stay redeliverable | [ADR-009](docs/adrs/ADR-009-delivery-semantics.md) |
-| Kill-switch on a compacted control topic | Same hot-swap pattern as `rules.control` — activating the switch anywhere flags claims everywhere within seconds | [ADR-010](docs/adrs/ADR-010-kill-switch-distribution.md) |
-| Provider-level holdout randomization | Cluster randomization keeps intervention feedback from contaminating the control arm; deterministic NPI ranking survives restarts | [ADR-011](docs/adrs/ADR-011-holdout-randomization-unit.md) |
+| Confidence-gated autonomy: 3-condition gate + Platt calibration | Cited rule, calibrated confidence floor, and dollar ceiling map one-to-one onto FCA liability elements | [ADR-004](docs/adrs/ADR-004-confidence-gated-autonomy.md) |
+| Feedback & measurement: drift windows + provider-level holdout | 50-outcome windows catch real drift without noise; cluster randomization keeps the control arm uncontaminated | [ADR-005](docs/adrs/ADR-005-feedback-and-measurement.md) |
+| Payer rule intelligence: Snowflake + cache, PA in the tool loop | Versioned storage for the audit trail, in-memory serving for the hot path, one LLM call for one complete risk picture | [ADR-006](docs/adrs/ADR-006-payer-rule-intelligence.md) |
+| Delivery & control plane: at-least-once + compacted kill-switch topic | One claim, one action via effect dedup; the single-lever guarantee survives horizontal scaling | [ADR-007](docs/adrs/ADR-007-delivery-and-control-plane.md) |
 
 ---
 

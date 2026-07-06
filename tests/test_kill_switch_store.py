@@ -1,6 +1,6 @@
 # Copyright (c) 2026 Eric Grynspan. All rights reserved.
 """
-Kill-switch state distribution tests (ADR-010).
+Kill-switch state distribution tests (ADR-007).
 
 The FCA single-lever guarantee across replicas: activating the switch on
 one KillSwitch instance must flag claims on every instance sharing the
