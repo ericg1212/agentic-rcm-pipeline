@@ -28,7 +28,7 @@ great-expectations==0.18.22
 # Config
 python-dotenv==1.2.2
 pydantic==2.9.2
-pydantic-settings==2.5.2
+pydantic-settings==2.14.2
 
 # HTTP
 requests==2.33.0
