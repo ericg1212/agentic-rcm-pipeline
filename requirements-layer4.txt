@@ -29,6 +29,6 @@ structlog>=26.1.0
 tenacity>=9.1.4
 
 # Dev / test
-pytest>=8.0.0
+pytest>=9.1.1
 pytest-cov>=7.1.0
 pip-audit>=2.7.0
