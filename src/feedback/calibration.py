@@ -14,7 +14,7 @@ FCA-adjacent risk trigger:
   (scienter element). The alert requires ops acknowledgment before the next
   scoring run.
 
-ADR-008: Platt chosen over isotonic regression (overfits at low N) and no-
+ADR-004: Platt chosen over isotonic regression (overfits at low N) and no-
 calibration (FCA liability risk when scores are systematically miscalibrated).
 """
 from __future__ import annotations

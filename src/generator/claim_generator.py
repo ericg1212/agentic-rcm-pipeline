@@ -128,7 +128,7 @@ class ClaimGenerator:
 
     def _assign_holdout(self, provider_npi: str) -> bool:
         """
-        Holdout arm assignment (ADR-011).
+        Holdout arm assignment (ADR-005).
 
         provider unit (default): cluster randomization — a deterministic
         holdout_fraction sample of the provider roster, ranked by SHA-256 of

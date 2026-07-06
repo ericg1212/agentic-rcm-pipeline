@@ -2,7 +2,7 @@
 """
 Kill-switch state distribution — compacted Kafka control topic.
 
-INTERVIEW-CRITICAL: own this cold. See ADR-010.
+INTERVIEW-CRITICAL: own this cold. See ADR-007.
 
 The FCA "single lever" guarantee only holds if every consumer replica sees
 the same switch state. v1 kept state in-process — true for one process,

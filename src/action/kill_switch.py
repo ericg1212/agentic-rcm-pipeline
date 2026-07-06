@@ -14,7 +14,7 @@ Activation triggers (any one is sufficient):
   - Auto-correct rate spike (runaway autonomy signal)
   - Manual trigger (ops team, on-call)
 
-State distribution (ADR-010): pass a KillSwitchStore to share state across
+State distribution (ADR-007): pass a KillSwitchStore to share state across
 replicas — production uses the compacted control.kill-switch Kafka topic
 (same hot-swap pattern as rules.control). Every is_active check syncs the
 latest published state, so activating the switch on any replica flags all
