@@ -21,7 +21,7 @@ pydantic>=2.9.0
 
 # Utilities
 structlog>=26.1.0
-tenacity>=8.4.0
+tenacity>=9.1.4
 
 # Dev / test
 pytest>=8.0.0
