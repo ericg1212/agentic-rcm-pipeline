@@ -7,7 +7,7 @@
 [![Kafka](https://img.shields.io/badge/kafka-3.8.0_KRaft-231F20?logo=apache-kafka&logoColor=white)](https://kafka.apache.org/)
 [![Snowflake](https://img.shields.io/badge/snowflake-warehouse-29B5E8?logo=snowflake&logoColor=white)](https://snowflake.com)
 [![dbt](https://img.shields.io/badge/dbt-staging%20%2B%20mart-FF694B)](https://www.getdbt.com/)
-[![Claude API](https://img.shields.io/badge/claude-sonnet--4--6-5A67D8)](https://anthropic.com)
+![LLM](https://img.shields.io/badge/LLM-tool--use-5A67D8)
 
 ![pytest](https://img.shields.io/badge/pytest-251%20passing-0A9EDC?style=flat-square&logo=pytest&logoColor=white)
 ![Cost per Claim](https://img.shields.io/badge/cost%2Fclaim-%240.003-22c55e?style=flat-square)
@@ -42,11 +42,11 @@ Denied classifies denials retrospectively. Trust but Verify adds AI governance. 
 | ROI on analysis cost | **50,000×** |
 | LLM touch rate | **~15%** of claims (deterministic gate absorbs the rest) |
 
-Every scored claim logs `input_tokens`, `output_tokens`, and `cost_usd` to the structlog event stream and Snowflake `RAW.LLM_SCORING_RESULTS`. The ROI is measured, not assumed — the numbers above come from the actual token usage log. The gate is the cost control: 85% of claims are adjudicated deterministically in under a millisecond, making the LLM spend proportional to genuine ambiguity.
+Every scored claim logs its token usage and cost to Snowflake `RAW.LLM_SCORING_RESULTS` — the numbers above come from the actual usage log. The gate is the cost control: 85% of claims are adjudicated deterministically in under a millisecond, making LLM spend proportional to genuine ambiguity.
 
 ---
 
-## What's Built
+## Architecture
 
 ```mermaid
 flowchart LR
@@ -54,8 +54,8 @@ flowchart LR
     K[("Kafka: claims.raw<br/>6 partitions, key=payer_id<br/>Avro + Schema Registry")]
     N{"NCCI Gate<br/>PTP edits + MUE<br/>deterministic, sub-ms"}
     CLR["Clearinghouse<br/>pass / corrected"]
-    SC[("claims.scored<br/>Layer 2")]
-    AC[("claims.actions<br/>Layer 3")]
+    SC[("claims.scored")]
+    AC[("claims.actions")]
     DLQ["DLQ<br/>schema violations"]
     RC[("rules.control<br/>compacted, hot-swap")]
     AR{"Action Router<br/>holdout bypass<br/>auto-correct / escalate"}
@@ -86,40 +86,57 @@ flowchart LR
     AO -.->|outcomes| CAL
 ```
 
-**Layer 1 — Foundation:**
-- Live stochastic generator sampling real 2024 CMS Provider Utilization distributions
-- Deterministic NCCI PTP + MUE gate: `PASS` / `HARD_FAIL` / `AMBIGUOUS` — ~85% of claims never touch the LLM
-- Compacted `rules.control` topic: NCCI quarterly editions hot-swapped without consumer downtime
-- 10% holdout randomized at the provider level (ADR-011): deterministic SHA-256 rank sample of the NPI roster — cluster randomization keeps intervention feedback from contaminating the control arm, and assignment is stable across restarts and replays
-- Snowflake RAW: 5 append-only tables including immutable `ACTION_LOG` and `ADJUDICATION_OUTCOMES`
-- At-least-once delivery, effect-deduplicated: offsets stored per message after successful processing, committed in batches behind a producer flush barrier — a crash replays at most one batch; dedup marks only after successful emit, so dead-lettered claims stay redeliverable
-- Poison messages dead-letter with their raw bytes (base64) and stored offsets — inspectable, replayable, and never wedge the partition; every produce carries a delivery callback, so a failed delivery dead-letters instead of dropping
+## What's Built
 
-**Layer 2 — Intelligence:**
-- Claude API tool-use scorer: 5-tool loop (NCCI edit lookup, LCD policy, modifier check, payer history, submit decision), temperature=0, SHA-256 input hash for replay; bounded retry with exponential backoff + jitter on transient API failures before the deterministic fallback fires
-- CARC enum enforced at schema boundary — hallucinated denial codes rejected before scoring
-- Noise injection eval: wrong-diagnosis dirty claims pass the deterministic gate; LLM recovers via `get_lcd_policy` — proves LLM lift
-- dbt staging (3 views) + `fct_claim_risk_scores` mart with holdout/intervention/deterministic cohort column for lift calculation
+**Streaming Ingestion & Deterministic Gate**
+- Live stochastic claim generator sampling real 2024 CMS Provider Utilization distributions
+- NCCI PTP + MUE gate resolves ~85% of claims deterministically in under a millisecond — only genuine ambiguity reaches the LLM
+- Compacted `rules.control` topic hot-swaps NCCI quarterly editions with zero consumer downtime
+- At-least-once delivery with effect dedup; poison messages dead-letter with their raw bytes and never wedge a partition
+- 10% holdout arm randomized at the provider level — deterministic NPI ranking, stable across restarts and replays
+- Snowflake RAW: 5 append-only tables, including immutable `ACTION_LOG` and `ADJUDICATION_OUTCOMES`
 
-**Layer 3 — Action:**
-- Tiered confidence-gated router: holdout bypass → kill-switch → escalation gate → 3-condition auto-correct gate → flag → pass
-- 3-condition auto-correct gate: LLM recommended + confidence ≥ 0.92 + charge ≤ $500 — FCA defense: action traces to governing rule, confidence floor defeats recklessness, dollar ceiling limits exposure
-- Immutable audit log — every action records `governing_rule_cited`; escalations include full LLM rationale draft for human sign-off; `reversible` flag on each record
-- Single-lever kill-switch — halts all auto-corrections instantly; system degrades to FLAG-only without silent failure; idempotent activate/deactivate; state distributed across replicas via the compacted `control.kill-switch` topic (ADR-010) — the same hot-swap pattern as `rules.control`, so activating the switch anywhere flags claims everywhere within seconds
+**LLM Scoring**
+- 5-tool LLM loop (NCCI edit lookup, LCD policy, modifier check, payer history, PA pre-check) at temperature 0, with bounded retry and a deterministic fallback
+- `PayerRuleGraph` in-memory LCD/NCD cache backed by Snowflake `RAW.PAYER_RULES` — sub-10ms rule retrieval, daily LCD / weekly NCD ingestion
+- PA pre-check surfaces prior-auth risk (CARC CO-197) at point of scoring, governed by CMS-0057-F
+- CARC enum enforced at the schema boundary — hallucinated denial codes rejected before scoring
+- Noise-injection eval proves LLM lift: wrong-diagnosis claims that pass the deterministic gate are recovered via LCD policy lookup
+- dbt staging + `fct_claim_risk_scores` mart, keyed by holdout / intervention / deterministic cohort
 
-**Layer 4 — Feedback:**
-- `adjudications.outcomes` Kafka consumer — closes the pre-submission → clearinghouse → payer → ERA loop; every outcome keyed by arm (intervention / holdout / deterministic)
-- Holdout lift calculator: intervention vs. control arm denial rates, absolute + relative lift; MIN_POWER_N=30 guard before reporting
-- Drift monitor: rolling 50-outcome window vs. 100-outcome baseline; >20% relative change activates kill-switch; returns `None` on cold start — no false alarms while warming up
-- Streamlit dashboard: kill-switch control panel, action distribution, live lift analysis, drift status, recent audit log tail; `DEMO_MODE` for public preview
+**Action & Safety**
+- Tiered router: holdout bypass → kill-switch → escalation gate → auto-correct gate → flag → pass
+- Auto-correct requires all three: LLM-recommended + calibrated confidence ≥ 0.92 + charge ≤ $500 — the conditions map directly to FCA liability elements
+- `CalibrationMonitor` (Platt scaling + ECE) corrects systematic over/under-confidence; the FCA risk gate blocks auto-correct below the calibrated floor
+- Great Expectations contract on every LLM output — score bounds, CARC membership, action enum — rejects malformed outputs before routing
+- Immutable audit log: every action cites its governing rule; escalations carry the full LLM rationale for human sign-off
+- Distributed kill-switch on a compacted control topic — activate anywhere, every replica degrades to flag-only within seconds
 
-**Phase 2 — Adaptive Intelligence:**
-- Payer Rule Intelligence Layer: `PayerRuleGraph` in-memory LCD/NCD cache backed by Snowflake `RAW.PAYER_RULES` — sub-10ms rule retrieval per claim; daily LCD ingestion per MAC, weekly NCD ingestion; `stg_payer_rules` + `fct_coverage_policy_changes` dbt models track rule churn over time
-- PA Pre-Check Module: `check_prior_auth_required` tool injected into the Layer 2 tool loop — surfaces prior-auth risk (CARC CO-197) at point of scoring, governed by CMS-0057-F; `ScoringResult` carries `pa_required`, `pa_approval_likelihood`, `pa_criteria_met`; router escalates PA-flagged claims with governing rule cited
-- Confidence Calibration: `CalibrationMonitor` (Platt scaling + ECE metric) — corrects systematic over/under-confidence in LLM scores; FCA risk gate blocks auto-correct when calibrated confidence < 0.92; `fct_calibration_curve` dbt mart; calibration checkpoints logged to `RAW.CALIBRATION_CHECKPOINTS`
-- Denial Pattern Clustering: `DenialClusterAnalyzer` (DBSCAN) — surfaces recurring denial patterns from `RAW.DENIAL_CLUSTERS`; `fct_denial_clusters` dbt mart; cluster insights feed upstream prompt refinement
-- Great Expectations Validation Suite: schema-level contract on every LLM output — `risk_score` bounds [0–100], `confidence` range [0–1], CARC enum membership, `action` field values; rejects malformed outputs before they reach the action router
-- Self-Healing Dagster Sensors: denial-rate spike detection triggers automated re-scoring and alert suppression before human escalation — "agentic" at the infrastructure layer, not just the claim layer
+**Feedback & Measurement**
+- `adjudications.outcomes` consumer closes the pre-submission → clearinghouse → payer → ERA loop, every outcome keyed by arm
+- Holdout lift calculator: intervention vs. control denial rates, absolute + relative lift, minimum-power guard before reporting
+- Drift monitor: rolling 50-outcome window vs. 100-outcome baseline; >20% relative change fires the kill-switch
+- DBSCAN denial clustering surfaces recurring patterns that feed upstream prompt refinement
+- Self-healing Dagster sensors detect denial-rate spikes and trigger automated re-scoring before human escalation
+- Streamlit ops dashboard: kill-switch control panel, action distribution, live lift, drift status
+
+---
+
+## Architecture Decisions
+
+| Decision | Why | ADR |
+|---|---|---|
+| Kafka over Kinesis / micro-batch | Pre-submission interception needs event-time streaming with per-payer ordering; compacted topics enable zero-downtime rule hot-swaps | [ADR-001](docs/adrs/ADR-001-kafka-vs-alternatives.md) |
+| Real CMS distributions over DE-SynPUF / Synthea | No public dataset carries claim-level denial codes — realness lives in the policy and distributions, not the rows | [ADR-002](docs/adrs/ADR-002-data-ground-truth.md) |
+| Deterministic gate in front of the LLM | The gate resolves the confident majority sub-millisecond; only ambiguity pays the ~300ms LLM call | [ADR-003](docs/adrs/ADR-003-latency-llm-gate.md) |
+| 3-condition auto-correct gate | Cited rule, confidence floor, and dollar ceiling map one-to-one onto FCA liability elements | [ADR-004](docs/adrs/ADR-004-action-routing-thresholds.md) |
+| Drift window 50 / threshold 20% | Enough denials per window for signal without noise; >20% relative drift is operationally significant, below is weekly variance | [ADR-005](docs/adrs/ADR-005-drift-window-sizing.md) |
+| Snowflake + in-memory cache for payer rules | Snowflake versions every policy change for the audit trail; an in-memory dict serves the <10ms hot path — a graph DB buys nothing at this cardinality | [ADR-006](docs/adrs/ADR-006-rule-graph-storage.md) |
+| PA pre-check inside the same tool loop | PA criteria live in the policy documents the loop already retrieves — one LLM call, one coherent risk picture | [ADR-007](docs/adrs/ADR-007-pa-integration.md) |
+| Platt scaling for calibration | Calibration is a legal control: documented overconfidence is FCA recklessness; two parameters fit the outcome volume without overfitting | [ADR-008](docs/adrs/ADR-008-calibration-algorithm.md) |
+| At-least-once delivery with effect dedup | A crash replays at most one batch; dedup marks only after successful emit, so dead-lettered claims stay redeliverable | [ADR-009](docs/adrs/ADR-009-delivery-semantics.md) |
+| Kill-switch on a compacted control topic | Same hot-swap pattern as `rules.control` — activating the switch anywhere flags claims everywhere within seconds | [ADR-010](docs/adrs/ADR-010-kill-switch-distribution.md) |
+| Provider-level holdout randomization | Cluster randomization keeps intervention feedback from contaminating the control arm; deterministic NPI ranking survives restarts | [ADR-011](docs/adrs/ADR-011-holdout-randomization-unit.md) |
 
 ---
 
@@ -128,7 +145,7 @@ flowchart LR
 | Layer | Technology |
 |---|---|
 | Streaming | Apache Kafka 3.8.0 (KRaft — no ZooKeeper) |
-| LLM | Claude API `claude-sonnet-4-6` · tool-use · temp=0 |
+| LLM | Anthropic API (`claude-sonnet-4-6`) · tool-use · temperature 0 |
 | Warehouse | Snowflake (RAW → STAGING → MART) |
 | Transform | dbt |
 | Quality | Great Expectations |
@@ -164,20 +181,3 @@ make test        # 251 tests
 ```
 
 Download real NCCI quarterly CSVs from CMS and place in `data/ncci/`. Seed files included for dev.
-
----
-
-## Architecture Decision Records
-
-- [ADR-001: Kafka vs Kinesis vs micro-batch](docs/adrs/ADR-001-kafka-vs-alternatives.md)
-- [ADR-002: Real distributions vs DE-SynPUF vs Synthea](docs/adrs/ADR-002-data-ground-truth.md)
-- [ADR-003: Latency model and LLM trigger gate](docs/adrs/ADR-003-latency-llm-gate.md)
-- [ADR-004: Action routing — 3-condition auto-correct gate](docs/adrs/ADR-004-action-routing-thresholds.md)
-- [ADR-005: Drift window sizing and kill-switch threshold](docs/adrs/ADR-005-drift-window-sizing.md)
-- [ADR-006: Payer rule graph storage — Snowflake + in-memory cache](docs/adrs/ADR-006-rule-graph-storage.md)
-- [ADR-007: PA pre-check integration — same tool loop](docs/adrs/ADR-007-pa-integration.md)
-- [ADR-008: Confidence calibration — Platt scaling](docs/adrs/ADR-008-calibration-algorithm.md)
-- [ADR-009: Delivery semantics — at-least-once with effect dedup](docs/adrs/ADR-009-delivery-semantics.md)
-- [ADR-010: Kill-switch distribution — compacted control topic](docs/adrs/ADR-010-kill-switch-distribution.md)
-- [ADR-011: Holdout randomization — provider-level clusters](docs/adrs/ADR-011-holdout-randomization-unit.md)
-
