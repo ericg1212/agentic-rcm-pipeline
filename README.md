@@ -3,11 +3,12 @@
 [![CI](https://github.com/ericg1212/agentic-rcm-pipeline/actions/workflows/ci.yml/badge.svg)](https://github.com/ericg1212/agentic-rcm-pipeline/actions/workflows/ci.yml)
 [![codecov](https://codecov.io/gh/ericg1212/agentic-rcm-pipeline/branch/master/graph/badge.svg)](https://codecov.io/gh/ericg1212/agentic-rcm-pipeline)
 [![Release](https://img.shields.io/github/v/release/ericg1212/agentic-rcm-pipeline)](https://github.com/ericg1212/agentic-rcm-pipeline/releases)
-[![Python 3.13](https://img.shields.io/badge/python-3.13-blue.svg)](https://www.python.org/downloads/)
 [![Kafka](https://img.shields.io/badge/kafka-3.8.0_KRaft-231F20?logo=apache-kafka&logoColor=white)](https://kafka.apache.org/)
+![LLM](https://img.shields.io/badge/LLM-tool--use-5A67D8)
 [![Snowflake](https://img.shields.io/badge/snowflake-warehouse-29B5E8?logo=snowflake&logoColor=white)](https://snowflake.com)
 [![dbt](https://img.shields.io/badge/dbt-staging%20%2B%20mart-FF694B)](https://www.getdbt.com/)
-![LLM](https://img.shields.io/badge/LLM-tool--use-5A67D8)
+[![Docker](https://img.shields.io/badge/docker-compose-2496ED?logo=docker&logoColor=white)](https://docs.docker.com/compose/)
+[![Python 3.13](https://img.shields.io/badge/python-3.13-blue.svg)](https://www.python.org/downloads/)
 
 ![pytest](https://img.shields.io/badge/pytest-251%20passing-0A9EDC?style=flat-square&logo=pytest&logoColor=white)
 ![Cost per Claim](https://img.shields.io/badge/cost%2Fclaim-%240.003-22c55e?style=flat-square)
@@ -117,7 +118,7 @@ flowchart LR
 - Holdout lift calculator: intervention vs. control denial rates, absolute + relative lift, minimum-power guard before reporting
 - Drift monitor: rolling 50-outcome window vs. 100-outcome baseline; >20% relative change fires the kill-switch
 - DBSCAN denial clustering surfaces recurring patterns that feed upstream prompt refinement
-- Self-healing Dagster sensors detect denial-rate spikes and trigger automated re-scoring before human escalation
+- Dagster-invocable self-healing sensors detect denial-rate spikes and trigger automated re-scoring before human escalation
 - Streamlit ops dashboard: kill-switch control panel, action distribution, live lift, drift status
 
 ---
