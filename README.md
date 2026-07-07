@@ -1,7 +1,6 @@
 # Cleared: Agentic RCM Pre-Submission Prevention Pipeline
 
 [![CI](https://github.com/ericg1212/agentic-rcm-pipeline/actions/workflows/ci.yml/badge.svg)](https://github.com/ericg1212/agentic-rcm-pipeline/actions/workflows/ci.yml)
-[![codecov](https://codecov.io/gh/ericg1212/agentic-rcm-pipeline/branch/master/graph/badge.svg)](https://codecov.io/gh/ericg1212/agentic-rcm-pipeline)
 [![Release](https://img.shields.io/github/v/release/ericg1212/agentic-rcm-pipeline)](https://github.com/ericg1212/agentic-rcm-pipeline/releases)
 [![Kafka](https://img.shields.io/badge/kafka-3.8.0_KRaft-231F20?logo=apache-kafka&logoColor=white)](https://kafka.apache.org/)
 ![LLM](https://img.shields.io/badge/LLM-tool--use-5A67D8)
