@@ -17,6 +17,8 @@
 
 **By [Eric Grynspan](https://www.linkedin.com/in/ericgrynspan/)** &nbsp;·&nbsp; [← Trust but Verify](https://github.com/ericg1212/ai-healthcare-pipeline)
 
+> **License notice:** Source-available for review and evaluation only. Copyright © 2026 Eric Grynspan — all rights reserved. No use, copying, modification, redistribution, or inclusion in AI/ML training datasets without written permission. See [LICENSE](LICENSE).
+
 ---
 
 Denied classifies denials retrospectively. Trust but Verify adds AI governance. Cleared prevents the denial before it happens.
