@@ -124,7 +124,7 @@ flowchart LR
 
 ---
 
-## Architecture Decisions
+## Architecture Decisions (ADRs)
 
 | Decision | Why | ADR |
 |---|---|---|
@@ -165,6 +165,31 @@ Every claim event composes from **CMS distributions, provider NPIs, and NCCI adj
 | Denial rate baseline | CMS Transparency in Coverage PUF |
 
 The generator composes novel claim events from these distributions — every denial still traces back to an actual Medicare adjudication rule.
+
+---
+
+## Project Structure
+
+```
+src/
+├── generator/        # live stochastic claim generator + Kafka producer
+├── consumer/         # claim consumer, NCCI gate, DLQ handling        (Perception)
+├── reasoning/        # LLM scorer, tool loop, prompt versioning       (Reasoning)
+├── action/           # tiered router, corrections, audit, kill-switch (Action)
+├── feedback/         # outcomes, lift, drift, calibration, clustering (Feedback)
+├── intelligence/     # payer rule graph + LCD/NCD ingestion
+├── eval/             # noise-injection evaluation harness
+├── validation/       # Great Expectations scoring suite
+├── dagster_jobs/     # self-healing sensors
+├── schemas/          # Avro schemas (claims.raw)
+└── config/           # typed settings
+app/                  # Streamlit ops dashboard
+dbt/                  # staging + mart models over Snowflake
+docs/adrs/            # 7 architecture decision records
+snowflake/            # RAW-layer DDL
+infra/                # Docker Compose (Kafka KRaft + Schema Registry)
+tests/                # 251 tests
+```
 
 ---
 
