@@ -1,13 +1,14 @@
 # Cleared: Agentic RCM Pre-Submission Prevention Pipeline
 
 [![CI](https://github.com/ericg1212/agentic-rcm-pipeline/actions/workflows/ci.yml/badge.svg)](https://github.com/ericg1212/agentic-rcm-pipeline/actions/workflows/ci.yml)
-[![Release](https://img.shields.io/github/v/release/ericg1212/agentic-rcm-pipeline)](https://github.com/ericg1212/agentic-rcm-pipeline/releases)
-[![Kafka](https://img.shields.io/badge/kafka-3.8.0_KRaft-231F20?logo=apache-kafka&logoColor=white)](https://kafka.apache.org/)
-![LLM](https://img.shields.io/badge/LLM-tool--use-5A67D8)
-[![Snowflake](https://img.shields.io/badge/snowflake-warehouse-29B5E8?logo=snowflake&logoColor=white)](https://snowflake.com)
-[![dbt](https://img.shields.io/badge/dbt-staging%20%2B%20mart-FF694B)](https://www.getdbt.com/)
-[![Docker](https://img.shields.io/badge/docker-compose-2496ED?logo=docker&logoColor=white)](https://docs.docker.com/compose/)
-[![Python 3.13](https://img.shields.io/badge/python-3.13-blue.svg)](https://www.python.org/downloads/)
+[![CodeQL](https://github.com/ericg1212/agentic-rcm-pipeline/actions/workflows/codeql.yml/badge.svg)](https://github.com/ericg1212/agentic-rcm-pipeline/actions/workflows/codeql.yml)
+[![Release](https://img.shields.io/github/v/release/ericg1212/agentic-rcm-pipeline?style=flat-square)](https://github.com/ericg1212/agentic-rcm-pipeline/releases)
+[![Kafka](https://img.shields.io/badge/Kafka-3.8.0%20KRaft-231F20?style=flat-square&logo=apache-kafka&logoColor=white)](https://kafka.apache.org/)
+![LLM](https://img.shields.io/badge/LLM-tool--use-5A67D8?style=flat-square)
+[![Snowflake](https://img.shields.io/badge/Snowflake-warehouse-29B5E8?style=flat-square&logo=snowflake&logoColor=white)](https://snowflake.com)
+[![dbt](https://img.shields.io/badge/dbt-staging%20%2B%20mart-FF694B?style=flat-square)](https://www.getdbt.com/)
+[![Docker](https://img.shields.io/badge/Docker-Compose-2496ED?style=flat-square&logo=docker&logoColor=white)](https://docs.docker.com/compose/)
+[![Python](https://img.shields.io/badge/Python-3.13-3776AB?style=flat-square&logo=python&logoColor=white)](https://www.python.org/downloads/)
 
 ![pytest](https://img.shields.io/badge/pytest-251%20passing-0A9EDC?style=flat-square&logo=pytest&logoColor=white)
 ![Cost per Claim](https://img.shields.io/badge/cost%2Fclaim-%240.003-22c55e?style=flat-square)
@@ -140,16 +141,16 @@ flowchart LR
 
 ## Stack
 
-| Layer | Technology |
-|---|---|
-| Streaming | Apache Kafka 3.8.0 (KRaft — no ZooKeeper) |
-| LLM | Anthropic API (`claude-sonnet-4-6`) · tool-use · temperature 0 |
-| Warehouse | Snowflake (RAW → STAGING → MART) |
-| Transform | dbt |
-| Quality | Great Expectations |
-| Dashboard | Streamlit |
-| Infra | Docker Compose |
-| Language | Python 3.13 |
+| Layer | Technology | Role |
+|---|---|---|
+| Streaming | Apache Kafka 3.8.0 (KRaft — no ZooKeeper) | Event-time claim interception, per-payer ordering; compacted control topics for rule hot-swap + kill-switch |
+| LLM | Anthropic API (`claude-sonnet-4-6`) · tool-use · temperature 0 | 5-tool scoring loop for the ambiguous ~15% behind the deterministic gate |
+| Warehouse | Snowflake (RAW → STAGING → MART) | Append-only audit tables, versioned payer rules, LLM usage log |
+| Transform | dbt | Staging + `fct_claim_risk_scores` mart, keyed by holdout / intervention / deterministic cohort |
+| Quality | Great Expectations | Contract on every LLM output — score bounds, CARC membership, action enum |
+| Dashboard | Streamlit | Ops panel — kill-switch control, action distribution, live lift, drift status |
+| Infra | Docker Compose | Kafka KRaft + Schema Registry local stack |
+| Language | Python 3.13 | Generator, consumers, tool loop, routers, monitors |
 
 ---
 
@@ -165,6 +166,16 @@ Every claim event composes from **CMS distributions, provider NPIs, and NCCI adj
 | Denial rate baseline | CMS Transparency in Coverage PUF |
 
 The generator composes novel claim events from these distributions — every denial still traces back to an actual Medicare adjudication rule.
+
+---
+
+## Testing
+
+```bash
+make test        # 251 tests
+```
+
+251 tests spanning all four agent layers: perception (claim consumer, NCCI gate, DLQ), reasoning (LLM scorer, calibration, noise-injection eval), action (tiered router, kill-switch store, PA pre-check), and feedback (drift sensors, denial clustering, outcome handling) — plus the Great Expectations scoring-suite contract, the payer rule graph, and the live claim generator.
 
 ---
 
@@ -204,3 +215,11 @@ make test        # 251 tests
 ```
 
 Download real NCCI quarterly CSVs from CMS and place in `data/ncci/`. Seed files included for dev.
+
+---
+
+## Author
+
+**Eric Grynspan** — Data Engineer · Financial Services & Healthcare
+
+[![LinkedIn](https://img.shields.io/badge/LinkedIn-Eric%20Grynspan-0A66C2?style=flat-square)](https://www.linkedin.com/in/ericgrynspan/)
