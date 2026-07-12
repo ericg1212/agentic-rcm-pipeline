@@ -129,13 +129,13 @@ flowchart LR
 
 | Decision | Why | ADR |
 |---|---|---|
-| Kafka over Kinesis / micro-batch | Pre-submission interception needs event-time streaming with per-payer ordering; compacted topics enable zero-downtime rule hot-swaps | [ADR-001](docs/adrs/ADR-001-kafka-vs-alternatives.md) |
-| Real CMS distributions over DE-SynPUF / Synthea | No public dataset carries claim-level denial codes — realness lives in the policy and distributions, not the rows | [ADR-002](docs/adrs/ADR-002-data-ground-truth.md) |
-| Deterministic gate in front of the LLM | The gate resolves the confident majority sub-millisecond; only ambiguity pays the ~300ms LLM call | [ADR-003](docs/adrs/ADR-003-latency-llm-gate.md) |
-| Confidence-gated autonomy: 3-condition gate + Platt calibration | Cited rule, calibrated confidence floor, and dollar ceiling map one-to-one onto FCA liability elements | [ADR-004](docs/adrs/ADR-004-confidence-gated-autonomy.md) |
-| Feedback & measurement: drift windows + provider-level holdout | 50-outcome windows catch real drift without noise; cluster randomization keeps the control arm uncontaminated | [ADR-005](docs/adrs/ADR-005-feedback-and-measurement.md) |
-| Payer rule intelligence: Snowflake + cache, PA in the tool loop | Versioned storage for the audit trail, in-memory serving for the hot path, one LLM call for one complete risk picture | [ADR-006](docs/adrs/ADR-006-payer-rule-intelligence.md) |
-| Delivery & control plane: at-least-once + compacted kill-switch topic | One claim, one action via effect dedup; the single-lever guarantee survives horizontal scaling | [ADR-007](docs/adrs/ADR-007-delivery-and-control-plane.md) |
+| **Kafka over Kinesis / micro-batch** | Pre-submission interception needs event-time streaming with per-payer ordering; compacted topics enable zero-downtime rule hot-swaps | [ADR-001](docs/adrs/ADR-001-kafka-vs-alternatives.md) |
+| **Real CMS distributions over DE-SynPUF / Synthea** | No public dataset carries claim-level denial codes — realness lives in the policy and distributions, not the rows | [ADR-002](docs/adrs/ADR-002-data-ground-truth.md) |
+| **Deterministic gate in front of the LLM** | The gate resolves the confident majority sub-millisecond; only ambiguity pays the ~300ms LLM call | [ADR-003](docs/adrs/ADR-003-latency-llm-gate.md) |
+| **Confidence-gated autonomy: 3-condition gate + Platt calibration** | Cited rule, calibrated confidence floor, and dollar ceiling map one-to-one onto FCA liability elements | [ADR-004](docs/adrs/ADR-004-confidence-gated-autonomy.md) |
+| **Feedback & measurement: drift windows + provider-level holdout** | 50-outcome windows catch real drift without noise; cluster randomization keeps the control arm uncontaminated | [ADR-005](docs/adrs/ADR-005-feedback-and-measurement.md) |
+| **Payer rule intelligence: Snowflake + cache, PA in the tool loop** | Versioned storage for the audit trail, in-memory serving for the hot path, one LLM call for one complete risk picture | [ADR-006](docs/adrs/ADR-006-payer-rule-intelligence.md) |
+| **Delivery & control plane: at-least-once + compacted kill-switch topic** | One claim, one action via effect dedup; the single-lever guarantee survives horizontal scaling | [ADR-007](docs/adrs/ADR-007-delivery-and-control-plane.md) |
 
 ---
 
