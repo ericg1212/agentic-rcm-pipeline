@@ -14,7 +14,7 @@ fastavro==1.12.2
 anthropic==0.31.0
 
 # Data
-pandas==2.2.3
+pandas==3.0.3
 numpy==2.5.0
 pyarrow==24.0.0
 

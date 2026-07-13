@@ -14,7 +14,7 @@ anthropic>=0.40.0
 
 # Data
 numpy>=2.5.0
-pandas>=2.2.0
+pandas>=3.0.3
 
 # Dashboard
 streamlit>=1.54.0
