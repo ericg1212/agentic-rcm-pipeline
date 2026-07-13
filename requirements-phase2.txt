@@ -1,5 +1,5 @@
 # Phase 2 additional dependencies
 # Core Phase 2 ML algorithms
-scikit-learn>=1.4.0       # Platt scaling (LogisticRegression), DBSCAN, StandardScaler
+scikit-learn>=1.9.0       # Platt scaling (LogisticRegression), DBSCAN, StandardScaler
 scipy>=1.18.0             # cdist (cluster_analyzer), expit (sigmoid) available via sklearn.special
 numpy>=1.26.0             # array operations (already in requirements.txt; listed for clarity)
