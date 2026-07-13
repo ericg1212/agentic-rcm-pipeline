@@ -5,7 +5,7 @@
 # Update ci.yml to reference this file when Layer 2 tests land.
 
 # Streaming
-confluent-kafka[avro,schemaregistry]>=2.14.2
+confluent-kafka[avro,schemaregistry]>=2.15.0
 fastavro>=1.12.2
 
 # LLM — floor at 0.40.0 for claude-sonnet-4-6 support + stable tool_choice API

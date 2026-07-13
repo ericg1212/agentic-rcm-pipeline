@@ -11,7 +11,7 @@
 # image bump. Update this file (and ci.yml) as each new layer's imports land.
 
 # Streaming
-confluent-kafka[avro,schemaregistry]>=2.14.2
+confluent-kafka[avro,schemaregistry]>=2.15.0
 fastavro>=1.12.2
 
 # Data

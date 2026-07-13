@@ -7,7 +7,7 @@
 # Quality layer is actually built, not as a side effect of a CI fix.
 
 # Streaming
-confluent-kafka[avro,schemaregistry]==2.14.2
+confluent-kafka[avro,schemaregistry]==2.15.0
 fastavro==1.12.2
 
 # LLM
