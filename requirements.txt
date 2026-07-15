@@ -7,42 +7,42 @@
 # Quality layer is actually built, not as a side effect of a CI fix.
 
 # Streaming
-confluent-kafka[avro,schemaregistry]==2.14.2
+confluent-kafka[avro,schemaregistry]==2.15.0
 fastavro==1.12.2
 
 # LLM
-anthropic==0.31.0
+anthropic==0.116.0
 
 # Data
-pandas==2.2.3
-numpy==2.5.0
-pyarrow==24.0.0
+pandas==3.0.3
+numpy==2.5.1
+pyarrow==25.0.0
 
 # Snowflake
-snowflake-connector-python[pandas]==4.6.0
-snowflake-sqlalchemy==1.10.2
+snowflake-connector-python[pandas]==4.7.1
+snowflake-sqlalchemy==1.11.0
 
 # Quality
 great-expectations==0.18.22
 
 # Config
 python-dotenv==1.2.2
-pydantic==2.9.2
+pydantic==2.13.4
 pydantic-settings==2.14.2
 
 # HTTP
-requests==2.33.0
-httpx==0.27.0
+requests==2.34.2
+httpx==0.28.1
 
 # Utilities
 tenacity==9.1.4
 structlog==26.1.0
-uuid6==2024.1.12
+uuid6==2025.0.1
 
 # Dev / test
 pytest==9.1.1
 pytest-asyncio==1.4.0
 pytest-cov==7.1.0
-ruff==0.15.20
-bandit==1.7.9
-pip-audit==2.7.3
+ruff==0.15.21
+bandit==1.9.4
+pip-audit==2.10.1

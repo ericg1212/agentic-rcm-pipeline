@@ -11,11 +11,11 @@
 # image bump. Update this file (and ci.yml) as each new layer's imports land.
 
 # Streaming
-confluent-kafka[avro,schemaregistry]>=2.14.2
+confluent-kafka[avro,schemaregistry]>=2.15.0
 fastavro>=1.12.2
 
 # Data
-numpy>=2.5.0
+numpy>=2.5.1
 
 # Config
 python-dotenv>=1.2.2
@@ -26,4 +26,4 @@ structlog>=26.1.0
 # Dev / test
 pytest>=9.1.1
 pytest-cov>=7.1.0
-pip-audit>=2.7.0
+pip-audit>=2.10.1

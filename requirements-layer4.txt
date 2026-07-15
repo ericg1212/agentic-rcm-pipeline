@@ -6,23 +6,23 @@
 # uses pure Python rolling stats; GE is documented as the production upgrade path.
 
 # Streaming
-confluent-kafka[avro,schemaregistry]>=2.14.2
+confluent-kafka[avro,schemaregistry]>=2.15.0
 fastavro>=1.12.2
 
 # LLM
-anthropic>=0.40.0
+anthropic>=0.116.0
 
 # Data
-numpy>=2.5.0
-pandas>=2.2.0
+numpy>=2.5.1
+pandas>=3.0.3
 
 # Dashboard
-streamlit>=1.54.0
-plotly>=5.22.0
+streamlit>=1.59.2
+plotly>=6.9.0
 
 # Config
 python-dotenv>=1.0.0
-pydantic>=2.9.0
+pydantic>=2.13.4
 
 # Utilities
 structlog>=26.1.0
@@ -31,4 +31,4 @@ tenacity>=9.1.4
 # Dev / test
 pytest>=9.1.1
 pytest-cov>=7.1.0
-pip-audit>=2.7.0
+pip-audit>=2.10.1
