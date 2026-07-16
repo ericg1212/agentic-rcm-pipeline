@@ -13,7 +13,7 @@ import json
 
 from src.consumer.ncci_gate import GateDecision
 
-PROMPT_VERSION = "v1.1.0"
+PROMPT_VERSION = "v1.2.0"  # v1.2.0: auto_correct semantics tightened for Sonnet 5 (smoke-gate finding)
 
 SYSTEM_PROMPT = """\
 You are an autonomous RCM (Revenue Cycle Management) claim scoring agent for a Medicare \
@@ -40,8 +40,11 @@ SCORING GUIDELINES:
 - predicted_denial_code: the most likely CARC code if denied; null if risk_score < 30
 - driving_fields: the specific claim fields most responsible for the risk
 - recommended_action:
-    auto_correct — safe, low-risk fix (e.g., add a missing modifier); high confidence required
-    flag — needs billing team review before submission
+    auto_correct — ONLY when a specific, correctable defect exists on the claim (e.g., add a \
+missing modifier, remove an invalid one) AND risk is low-to-moderate; never on a clean claim \
+with nothing to fix, never when risk_score >= 85
+    flag — needs billing team review before submission; ALSO the correct action for clean \
+low-risk claims requiring no intervention (flag is the minimum-intervention action)
     hold — high risk; do not submit without intervention
     escalate — complex case requiring expert review; you will draft the correction rationale
 - rationale: 1-3 plain-English action instructions for the billing team — imperative voice, specific and actionable (e.g., "Attach the operative note for modifier 59 to override the CO-97 bundling flag")

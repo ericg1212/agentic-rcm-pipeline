@@ -573,21 +573,24 @@ class ClaimScorer:
             "input_schema": {
                 "type": "object",
                 "properties": {
+                    # NOTE: strict tool use rejects minimum/maximum keywords —
+                    # numeric bounds live in the description and are enforced
+                    # post-hoc by _validate() (layered enforcement).
                     "risk_score": {
                         "type": "integer",
-                        "minimum": 0,
-                        "maximum": 100,
-                        "description": "Denial risk 0 (certain clean) to 100 (certain denial)",
+                        "description": "Denial risk, integer 0-100: 0 = certain clean, 100 = certain denial",
                     },
                     "confidence": {
                         "type": "number",
-                        "minimum": 0.0,
-                        "maximum": 1.0,
-                        "description": "Confidence in the risk_score assessment",
+                        "description": "Confidence in the risk_score assessment, 0.0-1.0",
                     },
+                    # anyOf instead of type:["string","null"] + enum — strict
+                    # mode rejects enum values that don't match a union type
                     "predicted_denial_code": {
-                        "type": ["string", "null"],
-                        "enum": carc_enum + [None],
+                        "anyOf": [
+                            {"type": "string", "enum": carc_enum},
+                            {"type": "null"},
+                        ],
                         "description": "Most likely CARC code if denied, or null if risk_score < 30",
                     },
                     "driving_fields": {
