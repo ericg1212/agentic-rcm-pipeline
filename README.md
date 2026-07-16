@@ -179,10 +179,10 @@ The generator composes novel claim events from these distributions — every den
 ## Testing
 
 ```bash
-make test        # 251 tests
+make test        # 272 tests
 ```
 
-251 tests spanning all four agent layers: perception (claim consumer, NCCI gate, DLQ), reasoning (LLM scorer, calibration, noise-injection eval), action (tiered router, kill-switch store, PA pre-check), and feedback (drift sensors, denial clustering, outcome handling) — plus the Great Expectations scoring-suite contract, the payer rule graph, and the live claim generator.
+272 tests spanning all four agent layers: perception (claim consumer, NCCI gate, DLQ), reasoning (LLM scorer, calibration, noise-injection eval), action (tiered router, kill-switch store, PA pre-check), and feedback (drift sensors, denial clustering, outcome handling) — plus the Great Expectations scoring-suite contract, the payer rule graph, the live claim generator, and the Phase 3 live-eval harness (LLM-as-Judge batch judging).
 
 ---
 
@@ -206,7 +206,7 @@ dbt/                  # staging + mart models over Snowflake
 docs/adrs/            # 7 architecture decision records
 snowflake/            # RAW-layer DDL
 infra/                # Docker Compose (Kafka KRaft + Schema Registry)
-tests/                # 251 tests
+tests/                # 272 tests
 ```
 
 ---
@@ -218,7 +218,7 @@ make up          # Kafka + Schema Registry + UI (http://localhost:8080)
 cp .env.example .env && make install
 make producer    # start live claim generator
 make consumer    # start NCCI gate consumer
-make test        # 251 tests
+make test        # 272 tests
 ```
 
 Download real NCCI quarterly CSVs from CMS and place in `data/ncci/`. Seed files included for dev.
