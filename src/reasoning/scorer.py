@@ -18,8 +18,16 @@ before the deterministic fallback fires. The fallback is the last resort,
 not the first response to a rate-limit blip — used_fallback rates stay
 meaningful in the drift monitor.
 
-Why temperature=0: same claim + same inputs = same score. Reproducibility is an audit
-requirement. The input_hash + model_id + prompt_version stamps every result for replay.
+Why determinism without temperature=0: Sonnet 5 removed sampling params (non-default
+temperature returns 400). Determinism now comes from structural enforcement — strict
+tool schemas guarantee schema-valid inputs at the API boundary, the CARC enum constrains
+denial codes, and _validate() bounds-checks every field. Sampling never guaranteed
+identical outputs anyway; the input_hash + model_id + prompt_version stamps every
+result for replay, and the audit story is enforcement, not sampling.
+
+Why thinking disabled: Sonnet 5 runs adaptive thinking by default when the field is
+omitted. This scorer sits in a latency-gated streaming path; thinking is disabled
+explicitly to preserve the pre-migration latency profile (see ADR-008).
 
 Why tool-use for structured output: the submit_scoring_decision schema enforces types at
 the API boundary. risk_score is bounded [0,100], denial code is constrained to the CARC
@@ -74,6 +82,10 @@ class ScoringResult:
     fallback_reason: str | None = None
     input_tokens: int = 0
     output_tokens: int = 0
+    # Prompt-cache accounting: usage.input_tokens excludes cached tokens, so
+    # these are tracked separately for honest cost + cache-hit-rate metrics
+    cache_creation_input_tokens: int = 0
+    cache_read_input_tokens: int = 0
     cost_usd: float = 0.0
     # Phase 2 — PA Pre-Check fields (None when PA tool was not called)
     pa_required: bool | None = None
@@ -117,6 +129,18 @@ def _load_carc_codes() -> frozenset[str]:
     return frozenset(data.get("carc", {}).keys())
 
 
+def _make_strict(tool: dict) -> dict:
+    """
+    Enable strict tool use: the API guarantees tool inputs validate against the
+    schema exactly — one more hallucination-defense layer on top of the CARC
+    enum and _validate() (the FCA-audit story is layered enforcement).
+    Requires additionalProperties: false on the schema.
+    """
+    tool["strict"] = True
+    tool["input_schema"]["additionalProperties"] = False
+    return tool
+
+
 def _compute_input_hash(claim: dict, gate: GateDecision) -> str:
     payload = json.dumps(
         {"claim": claim, "gate": gate.to_dict()},
@@ -142,8 +166,8 @@ class ClaimScorer:
         )
         self._tool_registry = ToolRegistry(ncci_gate)
         self._carc_codes = _load_carc_codes()
-        self._submit_tool = self._build_submit_tool()
-        self._all_tools = self._build_lookup_tools() + [self._submit_tool]
+        self._submit_tool = _make_strict(self._build_submit_tool())
+        self._all_tools = [_make_strict(t) for t in self._build_lookup_tools()] + [self._submit_tool]
 
     # ------------------------------------------------------------------
     # Public API
@@ -159,10 +183,13 @@ class ClaimScorer:
             claim_message = build_claim_message(claim, gate_decision)
             messages: list[dict] = [{"role": "user", "content": claim_message}]
 
-            submit_inputs, tool_trace, input_tokens, output_tokens = self._run_tool_loop(messages)
+            submit_inputs, tool_trace, usage = self._run_tool_loop(messages)
+            input_tokens, output_tokens = usage["input"], usage["output"]
             cost_usd = (
-                input_tokens * LLMConfig.INPUT_COST_PER_MTOK
-                + output_tokens * LLMConfig.OUTPUT_COST_PER_MTOK
+                usage["input"] * LLMConfig.INPUT_COST_PER_MTOK
+                + usage["cache_creation"] * LLMConfig.INPUT_COST_PER_MTOK * LLMConfig.CACHE_WRITE_MULT
+                + usage["cache_read"] * LLMConfig.INPUT_COST_PER_MTOK * LLMConfig.CACHE_READ_MULT
+                + usage["output"] * LLMConfig.OUTPUT_COST_PER_MTOK
             ) / 1_000_000
 
             if submit_inputs is None:
@@ -170,7 +197,7 @@ class ClaimScorer:
                     claim, gate_decision, "max_iterations_exceeded",
                     input_hash, _elapsed_ms(start_ns),
                 )
-                r.input_tokens, r.output_tokens, r.cost_usd = input_tokens, output_tokens, cost_usd
+                self._attach_usage(r, usage, cost_usd)
                 return r
 
             if not self._validate(submit_inputs):
@@ -178,7 +205,7 @@ class ClaimScorer:
                     claim, gate_decision, "validation_failed",
                     input_hash, _elapsed_ms(start_ns),
                 )
-                r.input_tokens, r.output_tokens, r.cost_usd = input_tokens, output_tokens, cost_usd
+                self._attach_usage(r, usage, cost_usd)
                 return r
 
             risk_score = int(submit_inputs["risk_score"])
@@ -207,6 +234,8 @@ class ClaimScorer:
                 used_fallback=False,
                 input_tokens=input_tokens,
                 output_tokens=output_tokens,
+                cache_creation_input_tokens=usage["cache_creation"],
+                cache_read_input_tokens=usage["cache_read"],
                 cost_usd=cost_usd,
                 pa_required=pa_tool_result.get("pa_required"),
                 pa_approval_likelihood=pa_tool_result.get("pa_approval_likelihood"),
@@ -221,6 +250,7 @@ class ClaimScorer:
                 latency_ms=result.latency_ms,
                 input_tokens=input_tokens,
                 output_tokens=output_tokens,
+                cache_read_tokens=usage["cache_read"],
                 cost_usd=round(cost_usd, 6),
             )
             return result
@@ -236,42 +266,63 @@ class ClaimScorer:
     # Tool loop
     # ------------------------------------------------------------------
 
+    @staticmethod
+    def _attach_usage(r: ScoringResult, usage: dict, cost_usd: float) -> None:
+        """Attach accumulated token usage + cost to a fallback result."""
+        r.input_tokens = usage["input"]
+        r.output_tokens = usage["output"]
+        r.cache_creation_input_tokens = usage["cache_creation"]
+        r.cache_read_input_tokens = usage["cache_read"]
+        r.cost_usd = cost_usd
+
     def _run_tool_loop(
         self, messages: list[dict]
-    ) -> tuple[dict | None, list[dict], int, int]:
+    ) -> tuple[dict | None, list[dict], dict]:
         """
-        Run the agentic tool loop. Returns (submit_inputs, tool_trace, input_tokens, output_tokens).
+        Run the agentic tool loop. Returns (submit_inputs, tool_trace, usage)
+        where usage accumulates input/output/cache_creation/cache_read tokens
+        across all iterations for cost-per-claim attribution.
 
         On the final iteration, tools are restricted to submit_scoring_decision
         and tool_choice is forced to "any" — the model MUST submit.
-        Token counts are accumulated across all iterations for cost-per-claim attribution.
         """
         tool_trace: list[dict] = []
-        total_input_tokens = 0
-        total_output_tokens = 0
+        usage = {"input": 0, "output": 0, "cache_creation": 0, "cache_read": 0}
 
         for iteration in range(MAX_TOOL_ITERATIONS):
             is_last = iteration == MAX_TOOL_ITERATIONS - 1
             tools = [self._submit_tool] if is_last else self._all_tools
             tool_choice: dict = {"type": "any"} if is_last else {"type": "auto"}
 
+            # Prompt caching: cache_control on the system block caches the
+            # tools + system prefix across claims (~90% input discount on
+            # cache reads). The forced-submit last iteration uses a smaller
+            # tool set, so it keys a separate (rarely hit) cache prefix.
+            # thinking is disabled explicitly — Sonnet 5 defaults to adaptive
+            # when the field is omitted, and this path is latency-gated.
             response = self._client.messages.create(
                 model=LLMConfig.MODEL_VERSION_TAG,
                 max_tokens=LLMConfig.MAX_TOKENS,
-                temperature=LLMConfig.TEMPERATURE,
-                system=SYSTEM_PROMPT,
+                thinking={"type": "disabled"},
+                system=[{
+                    "type": "text",
+                    "text": SYSTEM_PROMPT,
+                    "cache_control": {"type": "ephemeral"},
+                }],
                 tools=tools,
                 tool_choice=tool_choice,
                 messages=messages,
             )
 
-            total_input_tokens += response.usage.input_tokens
-            total_output_tokens += response.usage.output_tokens
+            usage["input"] += response.usage.input_tokens
+            usage["output"] += response.usage.output_tokens
+            usage["cache_creation"] += getattr(response.usage, "cache_creation_input_tokens", 0) or 0
+            usage["cache_read"] += getattr(response.usage, "cache_read_input_tokens", 0) or 0
             messages.append({"role": "assistant", "content": response.content})
 
             if response.stop_reason == "max_tokens":
                 log.warning("scorer_max_tokens_hit", iteration=iteration)
-                return None, tool_trace, total_input_tokens, total_output_tokens
+                return None, tool_trace, usage
 
             submit_inputs: dict | None = None
             tool_results: list[dict] = []
@@ -296,13 +347,13 @@ class ClaimScorer:
                     })
 
             if submit_inputs is not None:
-                return submit_inputs, tool_trace, total_input_tokens, total_output_tokens
+                return submit_inputs, tool_trace, usage
 
             if tool_results:
                 messages.append({"role": "user", "content": tool_results})
             # else: stop_reason=end_turn with no tools → loop will force submit next iteration
 
-        return None, tool_trace, total_input_tokens, total_output_tokens
+        return None, tool_trace, usage
 
     # ------------------------------------------------------------------
     # Validation
@@ -522,21 +573,24 @@ class ClaimScorer:
             "input_schema": {
                 "type": "object",
                 "properties": {
+                    # NOTE: strict tool use rejects minimum/maximum keywords —
+                    # numeric bounds live in the description and are enforced
+                    # post-hoc by _validate() (layered enforcement).
                     "risk_score": {
                         "type": "integer",
-                        "minimum": 0,
-                        "maximum": 100,
-                        "description": "Denial risk 0 (certain clean) to 100 (certain denial)",
+                        "description": "Denial risk, integer 0-100: 0 = certain clean, 100 = certain denial",
                     },
                     "confidence": {
                         "type": "number",
-                        "minimum": 0.0,
-                        "maximum": 1.0,
-                        "description": "Confidence in the risk_score assessment",
+                        "description": "Confidence in the risk_score assessment, 0.0-1.0",
                     },
+                    # anyOf instead of type:["string","null"] + enum — strict
+                    # mode rejects enum values that don't match a union type
                     "predicted_denial_code": {
-                        "type": ["string", "null"],
-                        "enum": carc_enum + [None],
+                        "anyOf": [
+                            {"type": "string", "enum": carc_enum},
+                            {"type": "null"},
+                        ],
                         "description": "Most likely CARC code if denied, or null if risk_score < 30",
                     },
                     "driving_fields": {

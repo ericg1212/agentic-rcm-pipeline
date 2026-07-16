@@ -8,7 +8,7 @@
 confluent-kafka[avro,schemaregistry]>=2.14.2
 fastavro>=1.12.2
 
-# LLM — floor at 0.40.0 for claude-sonnet-4-6 support + stable tool_choice API
+# LLM — floor at 0.40.0 for stable tool_choice API; claude-sonnet-5 + strict tools verified on 0.84.0
 anthropic>=0.40.0
 
 # Data

@@ -26,12 +26,14 @@ DIRTY PATTERNS INJECTED:
 from __future__ import annotations
 
 import copy
+import json
 import random
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING
 
 import structlog
 
+from src.config.settings import DataConfig
 from src.consumer.ncci_gate import GateDecision, NCCIGate, Route
 
 if TYPE_CHECKING:
@@ -62,6 +64,31 @@ LCD_RESTRICTED_PROCEDURES = {
 
 # Risk score floor for the LLM to "count" as a recovery on a wrong-diagnosis claim
 LLM_RECOVERY_RISK_THRESHOLD = 50
+
+# Jul 15 2026 live-run finding: F84.0 (an F-code) satisfies the psychotherapy
+# LCD's F-prefix coverage, so injecting it into 90834/90837 claims produced
+# claims that were NOT actually wrong — the scorer correctly judged them
+# covered and the harness scored that as a miss. Injection now filters the
+# candidate pool against the target procedures' covered ICD-10 prefixes.
+_lcd_covered_prefixes: dict[str, list[str]] | None = None
+
+
+def _covered_prefixes() -> dict[str, list[str]]:
+    """Lazy-load {hcpcs_code: covered_icd10_prefixes} from the LCD seed."""
+    global _lcd_covered_prefixes
+    if _lcd_covered_prefixes is None:
+        try:
+            path = DataConfig.CARC_FILE.parent.parent / "lcd" / "seed_lcd.json"
+            with open(path, encoding="utf-8") as f:
+                data = json.load(f)
+            _lcd_covered_prefixes = {
+                code: policy.get("covered_icd10_prefixes", [])
+                for code, policy in data.get("policies", {}).items()
+            }
+        except FileNotFoundError:
+            log.warning("lcd_seed_not_found_for_injection")
+            _lcd_covered_prefixes = {}
+    return _lcd_covered_prefixes
 
 
 @dataclass
@@ -98,12 +125,28 @@ def inject_wrong_diagnosis(claim: dict, rng: random.Random | None = None) -> dic
     (no injection possible for this pattern — skip it).
     """
     procs = claim.get("procedure_codes", [])
-    if not any(p in LCD_RESTRICTED_PROCEDURES for p in procs):
+    restricted = [p for p in procs if p in LCD_RESTRICTED_PROCEDURES]
+    if not restricted:
+        return None
+
+    # Only inject diagnoses that NO restricted procedure on the claim covers —
+    # a candidate matching a covered prefix would produce a legitimately
+    # covered claim, not a wrong-diagnosis claim (see module note on F84.0).
+    prefixes = _covered_prefixes()
+    candidates = [
+        d for d in UNRELATED_DIAGNOSES
+        if not any(
+            d.startswith(pfx)
+            for proc in restricted
+            for pfx in prefixes.get(proc, [])
+        )
+    ]
+    if not candidates:
         return None
 
     dirty = copy.deepcopy(claim)
     _rng = rng or random.Random()
-    dirty["diagnosis_codes"] = [_rng.choice(UNRELATED_DIAGNOSES)]
+    dirty["diagnosis_codes"] = [_rng.choice(candidates)]
     dirty["_injected_pattern"] = "wrong_diagnosis"
     return dirty
 

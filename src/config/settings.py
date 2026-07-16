@@ -34,15 +34,23 @@ class KafkaConfig:
 
 
 class LLMConfig:
-    MODEL = "claude-sonnet-4-6"
-    MAX_TOKENS = 512
-    TEMPERATURE = 0
+    MODEL = "claude-sonnet-5"
+    # Sonnet 5's tokenizer produces ~30% more tokens than sonnet-4-6 for the
+    # same text; 768 keeps headroom so the submit tool call never truncates.
+    MAX_TOKENS = 768
     API_KEY = os.getenv("ANTHROPIC_API_KEY")
-    # Pinned version tag for reproducibility audit log
-    MODEL_VERSION_TAG = "claude-sonnet-4-6-20250722"
-    # Per-million-token pricing for cost-per-claim analytics
-    INPUT_COST_PER_MTOK = 3.0    # $/MTok, claude-sonnet-4-6
-    OUTPUT_COST_PER_MTOK = 15.0  # $/MTok, claude-sonnet-4-6
+    # Audit tag for reproducibility log. claude-sonnet-5 has no dated snapshot
+    # ID — the alias is the pinned identifier. Determinism comes from strict
+    # tool schemas + CARC enum validation, not sampling params (removed on
+    # Sonnet 5; non-default temperature returns 400).
+    MODEL_VERSION_TAG = "claude-sonnet-5"
+    # Per-million-token pricing for cost-per-claim analytics.
+    # Intro pricing through 2026-08-31; standard $3/$15 per MTok after.
+    INPUT_COST_PER_MTOK = 2.0    # $/MTok, claude-sonnet-5 (intro)
+    OUTPUT_COST_PER_MTOK = 10.0  # $/MTok, claude-sonnet-5 (intro)
+    # Prompt-cache pricing multipliers on the input rate (5-min ephemeral TTL)
+    CACHE_WRITE_MULT = 1.25
+    CACHE_READ_MULT = 0.10
     # Bounded retry (SDK exponential backoff + jitter) on 429/5xx/timeouts
     # before the deterministic fallback fires. Availability over accuracy:
     # a transient rate-limit storm should not convert the reasoning layer

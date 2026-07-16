@@ -10,9 +10,9 @@
 [![Docker](https://img.shields.io/badge/Docker-Compose-2496ED?style=flat-square&logo=docker&logoColor=white)](https://docs.docker.com/compose/)
 [![Python](https://img.shields.io/badge/Python-3.13-3776AB?style=flat-square&logo=python&logoColor=white)](https://www.python.org/downloads/)
 
-![pytest](https://img.shields.io/badge/pytest-251%20passing-0A9EDC?style=flat-square&logo=pytest&logoColor=white)
-![Cost per Claim](https://img.shields.io/badge/cost%2Fclaim-%240.003-22c55e?style=flat-square)
-![ROI](https://img.shields.io/badge/ROI-50%2C000x-d97706?style=flat-square)
+![pytest](https://img.shields.io/badge/pytest-272%20passing-0A9EDC?style=flat-square&logo=pytest&logoColor=white)
+![Cost per Claim](https://img.shields.io/badge/cost%2Fclaim-%240.012%20live-22c55e?style=flat-square)
+![ROI](https://img.shields.io/badge/ROI-12%2C500x-d97706?style=flat-square)
 ![LLM Touch Rate](https://img.shields.io/badge/LLM%20touch%20rate-~15%25-8b5cf6?style=flat-square)
 ![Holdout](https://img.shields.io/badge/holdout%20arm-10%25%20control-0ea5e9?style=flat-square)
 
@@ -38,14 +38,19 @@ Denied classifies denials retrospectively. Trust but Verify adds AI governance. 
 
 ## Cost of Intelligence
 
+Live-measured on 300 claims against the production API path (claude-sonnet-5, 2026-07-15):
+
 | Metric | Value |
 |---|---|
-| API cost per claim scored | **$0.003** (claude-sonnet-4-6, ~200 input / 80 output tokens) |
+| API cost per claim scored | **$0.0119** (mean, live — includes prompt-cache read/write accounting) |
+| Latency | **p50 11.6s / p95 16.7s** (2–3 policy-lookup tool calls per claim) |
+| Prompt cache hit rate | **100%** (1.95M tokens served from cache at 0.10× the input rate) |
+| Fallback rate | **2.3%** (0 schema violations under strict tool use) |
 | Median Medicare denial value prevented | **$150** |
-| ROI on analysis cost | **50,000×** |
+| ROI on analysis cost | **12,500×** |
 | LLM touch rate | **~15%** of claims (deterministic gate absorbs the rest) |
 
-Every scored claim logs its token usage and cost to Snowflake `RAW.LLM_SCORING_RESULTS` — the numbers above come from the actual usage log. The gate is the cost control: 85% of claims are adjudicated deterministically in under a millisecond, making LLM spend proportional to genuine ambiguity.
+Every scored claim logs its token usage and cost — the numbers above come from the persisted results of the live validation run ([ADR-008](docs/adrs/ADR-008-live-evaluation-llm-judge.md)). The gate is the cost control: 85% of claims are adjudicated deterministically in under a millisecond, making LLM spend proportional to genuine ambiguity.
 
 ---
 
@@ -100,11 +105,12 @@ flowchart LR
 - Snowflake RAW: 5 append-only tables, including immutable `ACTION_LOG` and `ADJUDICATION_OUTCOMES`
 
 **LLM Scoring**
-- 5-tool LLM loop (NCCI edit lookup, LCD policy, modifier check, payer history, PA pre-check) at temperature 0, with bounded retry and a deterministic fallback
+- 6-tool LLM loop (NCCI edit lookup, LCD policy, modifier check, payer history, payer rules, PA pre-check) with strict tool schemas, bounded retry, and a deterministic fallback
 - `PayerRuleGraph` in-memory LCD/NCD cache backed by Snowflake `RAW.PAYER_RULES` — sub-10ms rule retrieval, daily LCD / weekly NCD ingestion
 - PA pre-check surfaces prior-auth risk (CARC CO-197) at point of scoring, governed by CMS-0057-F
 - CARC enum enforced at the schema boundary — hallucinated denial codes rejected before scoring
-- Noise-injection eval proves LLM lift: wrong-diagnosis claims that pass the deterministic gate are recovered via LCD policy lookup
+- Noise-injection eval proves LLM lift live: 18/18 wrong-diagnosis claims that passed the deterministic gate (diagnosis-blind by design) were recovered by the live model via LCD policy lookup — 100% recovery, measured 2026-07-15
+- LLM-as-Judge eval harness: 300 scoring outputs graded against a 5-criterion rubric by an independent judge (Haiku via Batch API) that sees deterministically fetched rule context, never the scorer's reasoning chain — 60% overall pass, with per-criterion rates localizing the gaps; judge validated at 94.4% agreement with a Sonnet spot-check sample ([ADR-008](docs/adrs/ADR-008-live-evaluation-llm-judge.md))
 - dbt staging + `fct_claim_risk_scores` mart, keyed by holdout / intervention / deterministic cohort
 
 **Action & Safety**
@@ -136,6 +142,7 @@ flowchart LR
 | **Feedback & measurement: drift windows + provider-level holdout** | 50-outcome windows catch real drift without noise; cluster randomization keeps the control arm uncontaminated | [ADR-005](docs/adrs/ADR-005-feedback-and-measurement.md) |
 | **Payer rule intelligence: Snowflake + cache, PA in the tool loop** | Versioned storage for the audit trail, in-memory serving for the hot path, one LLM call for one complete risk picture | [ADR-006](docs/adrs/ADR-006-payer-rule-intelligence.md) |
 | **Delivery & control plane: at-least-once + compacted kill-switch topic** | One claim, one action via effect dedup; the single-lever guarantee survives horizontal scaling | [ADR-007](docs/adrs/ADR-007-delivery-and-control-plane.md) |
+| **Live evaluation & LLM-as-Judge: measured numbers + independent rubric grading** | Every published metric is live-measured; the judge grades against ground-truth rule context, and the judge itself is validated by a stronger-model agreement sample | [ADR-008](docs/adrs/ADR-008-live-evaluation-llm-judge.md) |
 
 ---
 
@@ -144,7 +151,7 @@ flowchart LR
 | Layer | Technology | Role |
 |---|---|---|
 | Streaming | Apache Kafka 3.8.0 (KRaft — no ZooKeeper) | Event-time claim interception, per-payer ordering; compacted control topics for rule hot-swap + kill-switch |
-| LLM | Anthropic API (`claude-sonnet-4-6`) · tool-use · temperature 0 | 5-tool scoring loop for the ambiguous ~15% behind the deterministic gate |
+| LLM | Anthropic API (`claude-sonnet-5`) · tool-use · strict schemas · prompt caching | 6-tool scoring loop for the ambiguous ~15% behind the deterministic gate |
 | Warehouse | Snowflake (RAW → STAGING → MART) | Append-only audit tables, versioned payer rules, LLM usage log |
 | Transform | dbt | Staging + `fct_claim_risk_scores` mart, keyed by holdout / intervention / deterministic cohort |
 | Quality | Great Expectations | Contract on every LLM output — score bounds, CARC membership, action enum |

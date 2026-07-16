@@ -95,6 +95,33 @@ def test_inject_wrong_diagnosis_works_for_all_restricted_procedures():
         assert dirty["_injected_pattern"] == "wrong_diagnosis"
 
 
+def test_inject_never_picks_a_covered_diagnosis():
+    """Jul 15 live-run finding: F84.0 is F-prefix covered for psychotherapy,
+    so injecting it into 90834/90837 produced legitimately covered claims.
+    Injection must never pick a diagnosis the procedure's LCD covers."""
+    import random
+    for proc_code in ("90834", "90837"):
+        for seed in range(50):
+            claim = _make_clean_claim(proc_code, "F32.0")
+            dirty = inject_wrong_diagnosis(claim, random.Random(seed))
+            assert dirty is not None
+            injected = dirty["diagnosis_codes"][0]
+            assert not injected.startswith("F"), (
+                f"{proc_code} got covered F-code {injected} (seed={seed})"
+            )
+
+
+def test_inject_still_allows_f84_for_non_psych_procedures():
+    """F84.0 remains a valid injection for procedures that don't cover F-codes."""
+    import random
+    seen = set()
+    for seed in range(200):
+        claim = _make_clean_claim("27447", "M17.11")
+        dirty = inject_wrong_diagnosis(claim, random.Random(seed))
+        seen.add(dirty["diagnosis_codes"][0])
+    assert "F84.0" in seen
+
+
 # ---------------------------------------------------------------------------
 # Gate false-negative guarantee
 # ---------------------------------------------------------------------------
