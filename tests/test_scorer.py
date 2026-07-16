@@ -197,12 +197,16 @@ def _make_api_response(
     stop_reason: str = "tool_use",
     input_tokens: int = 120,
     output_tokens: int = 60,
+    cache_creation_tokens: int = 0,
+    cache_read_tokens: int = 0,
 ):
     resp = MagicMock()
     resp.content = content
     resp.stop_reason = stop_reason
     resp.usage.input_tokens = input_tokens
     resp.usage.output_tokens = output_tokens
+    resp.usage.cache_creation_input_tokens = cache_creation_tokens
+    resp.usage.cache_read_input_tokens = cache_read_tokens
     return resp
 
 
@@ -336,8 +340,8 @@ def test_score_captures_token_usage(scorer, clean_claim, pass_gate):
     assert result.input_tokens == 200
     assert result.output_tokens == 80
     assert result.cost_usd > 0.0
-    # cost = (200 * 3.0 + 80 * 15.0) / 1_000_000 = 0.0018
-    assert abs(result.cost_usd - 0.0018) < 1e-9
+    # cost = (200 * 2.0 + 80 * 10.0) / 1_000_000 = 0.0012 (sonnet-5 intro pricing)
+    assert abs(result.cost_usd - 0.0012) < 1e-9
 
 
 def test_score_accumulates_tokens_across_iterations(scorer, clean_claim, pass_gate):
@@ -367,8 +371,35 @@ def test_score_accumulates_tokens_across_iterations(scorer, clean_claim, pass_ga
 
     assert result.input_tokens == 350   # 150 + 200
     assert result.output_tokens == 110  # 40 + 70
-    # cost = (350 * 3.0 + 110 * 15.0) / 1_000_000 = 0.002700
-    assert abs(result.cost_usd - 0.002700) < 1e-9
+    # cost = (350 * 2.0 + 110 * 10.0) / 1_000_000 = 0.001800 (sonnet-5 intro pricing)
+    assert abs(result.cost_usd - 0.001800) < 1e-9
+
+
+def test_score_cache_tokens_priced_correctly(scorer, clean_claim, pass_gate):
+    """Cached tokens are excluded from usage.input_tokens and priced at their
+    own multipliers: writes 1.25x, reads 0.10x the input rate."""
+    submit_block = _make_tool_use_block(
+        "submit_scoring_decision",
+        {
+            "risk_score": 10,
+            "confidence": 0.92,
+            "predicted_denial_code": None,
+            "driving_fields": ["procedure_codes"],
+            "recommended_action": "flag",
+            "rationale": "Low-risk office visit. No bundling violations detected.",
+        },
+    )
+    scorer._client.messages.create.return_value = _make_api_response(
+        [submit_block], input_tokens=100, output_tokens=50,
+        cache_creation_tokens=2000, cache_read_tokens=4000,
+    )
+
+    result = scorer.score(clean_claim, pass_gate)
+
+    assert result.cache_creation_input_tokens == 2000
+    assert result.cache_read_input_tokens == 4000
+    # cost = (100*2.0 + 2000*2.0*1.25 + 4000*2.0*0.10 + 50*10.0) / 1e6 = 0.0065
+    assert abs(result.cost_usd - 0.0065) < 1e-9
 
 
 def test_fallback_cost_attributed_when_loop_ran(scorer, clean_claim, pass_gate):
