@@ -43,8 +43,10 @@ Replace all mock-derived performance claims with live-measured numbers, and grad
 | Fallback rate | 2.3% (7/300, all max-iterations; 0 schema violations under strict tools) |
 | Gate false negatives (corrected noise suite) | 18/18 injected wrong-diagnosis claims passed the gate (diagnosis-blind by design) |
 | Live LLM recovery rate on dirty claims | **100% (18/18)** — first-iteration harness measured 89.5% before the injection-pool fix (see above) |
-| Judge overall pass rate (Haiku, rubric v1.1.0, n=300) | {{JUDGE_PASS_RATE}} |
-| Haiku-vs-Sonnet judge agreement (n=30) | {{AGREEMENT_RATE}} (v1.0.0 rubric: 80%, below bar → calibrated) |
+| Judge overall pass rate (Haiku, rubric v1.1.0, n=300) | 60.0% — per-criterion: rule_applies 96.0%, guidance_actionable 96.3%, no_fabrication 94.7%, action_consistent 75.3%, carc_plausible 67.3% |
+| Haiku-vs-Sonnet judge agreement (n=30) | **94.4%** (v1.0.0 rubric: 80%, below the 90% bar → calibrated, then defensible) |
+
+**Primary live finding for follow-up:** the dominant judged defect is CARC prediction discipline — roughly a third of scored claims predict a `null` denial code at high risk scores, violating the "null only below risk 30" contract (some cite CO-197 in the rationale while predicting null). Candidate fix: enforce high-risk-requires-CARC in `_validate()` and/or the system prompt. Deliberately not patched in this run — the number is the honest baseline the fix will be measured against.
 
 ## Rejected
 

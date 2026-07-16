@@ -13,6 +13,10 @@ env/
 # Environment
 .env
 .env.local
+
+# Live-run artifacts: JSONL case records + judge verdicts stay local
+# (backed up to Dropbox); published numbers live in ADR-008 + README
+data/exports/
 *.env
 
 # Data files (download locally, never commit)
