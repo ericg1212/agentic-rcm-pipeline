@@ -37,7 +37,7 @@ log = structlog.get_logger(__name__)
 
 JUDGE_MODEL = "claude-haiku-4-5"
 SPOT_CHECK_MODEL = "claude-sonnet-5"
-RUBRIC_VERSION = "v1.0.0"
+RUBRIC_VERSION = "v1.1.0"  # v1.1.0: action-space context added — v1.0.0 judge failed `flag` on clean claims, not knowing flag is the minimum action (no pass/submit option exists)
 JUDGE_MAX_TOKENS = 1024
 
 # ---------------------------------------------------------------------------
@@ -57,14 +57,21 @@ CRITERIA: dict[str, str] = {
     ),
     "action_consistent": (
         "The recommended_action is consistent with the risk_score, confidence, and "
-        "submitted_charge: auto_correct requires high confidence (>=0.92) and low "
-        "charge (<=$500); risk_score >= 85 should not be auto-corrected; low-risk "
-        "clean claims should not be held or escalated."
+        "submitted_charge. IMPORTANT — the action space is exactly {auto_correct, "
+        "flag, hold, escalate}; there is NO pass/submit option, so 'flag' is the "
+        "minimum-intervention action and is CORRECT for clean low-risk claims. "
+        "Rules: auto_correct requires high confidence (>=0.92), low charge (<=$500), "
+        "and a specific correctable defect; risk_score >= 85 must never be "
+        "auto-corrected; low-risk clean claims should not be held or escalated "
+        "(flag is expected for them)."
     ),
     "guidance_actionable": (
-        "The rationale is imperative-voice, specific, and actionable by billing "
-        "staff — it names what to do (attach, remove, verify, recode). Vague "
-        "restatements of risk ('this claim may be denied') fail."
+        "The rationale is specific and actionable by billing staff — it names what "
+        "to do (attach, remove, verify, recode). For clean claims requiring no "
+        "intervention, a rationale confirming the claim is clean and ready for "
+        "submission IS actionable (do not fail it for lacking a fix — there is "
+        "nothing to fix). Vague restatements of risk ('this claim may be denied', "
+        "'ensure documentation supports') fail."
     ),
     "no_fabrication": (
         "Every procedure code, diagnosis code, modifier, CARC code, and policy "

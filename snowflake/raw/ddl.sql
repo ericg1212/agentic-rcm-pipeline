@@ -49,7 +49,7 @@ CREATE TABLE IF NOT EXISTS RAW.LLM_SCORING_RESULTS (
     SCORE_ID               VARCHAR(36)     NOT NULL,
     CLAIM_ID               VARCHAR(36)     NOT NULL,
     SCORED_AT              TIMESTAMP_NTZ   NOT NULL,
-    MODEL_ID               VARCHAR(100)    NOT NULL,  -- e.g. 'claude-sonnet-4-6-20250722'
+    MODEL_ID               VARCHAR(100)    NOT NULL,  -- e.g. 'claude-sonnet-5'
     PROMPT_VERSION         VARCHAR(20)     NOT NULL,  -- semver prompt tag
     NCCI_EDIT_VERSION      VARCHAR(10)     NOT NULL,
     INPUT_HASH             VARCHAR(64)     NOT NULL,  -- SHA-256 of prompt input JSON

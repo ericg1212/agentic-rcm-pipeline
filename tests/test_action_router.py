@@ -44,7 +44,7 @@ def _make_scoring_result(
         score_id="score-001",
         claim_id="claim-001",
         scored_at=datetime.now(timezone.utc),
-        model_id="claude-sonnet-4-6-20250722",
+        model_id="claude-sonnet-5",
         prompt_version="v1.0.0",
         ncci_edit_version="2026Q3",
         input_hash="abc123",

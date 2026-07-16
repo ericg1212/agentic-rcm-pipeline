@@ -204,9 +204,18 @@ def mode_smoke(n: int) -> int:
     return 0
 
 
+def mode_noise(dirty_fraction: float) -> int:
+    """Noise-injection suite only (no main run) — for suite reruns."""
+    from src.reasoning.scorer import ClaimScorer
+
+    gate = NCCIGate()
+    gate.load()
+    scorer = ClaimScorer(gate)
+    return _run_noise_suite(gate, scorer, dirty_fraction)
+
+
 def mode_full(n: int, dirty_fraction: float) -> int:
     """Full live run: n claims through gate->scorer + noise-injection suite."""
-    from src.eval.noise_injection import run_noise_injection_eval
     from src.reasoning.scorer import ClaimScorer
 
     gate = NCCIGate()
@@ -220,7 +229,13 @@ def mode_full(n: int, dirty_fraction: float) -> int:
     _write_jsonl(cases, "full")
     _print_summary(results, "FULL RUN")
 
-    # --- noise-injection suite (LIVE recovery rate on dirty claims) ---------
+    return _run_noise_suite(gate, scorer, dirty_fraction)
+
+
+def _run_noise_suite(gate: NCCIGate, scorer, dirty_fraction: float) -> int:
+    """Noise-injection suite: LIVE recovery rate on dirty claims."""
+    from src.eval.noise_injection import run_noise_injection_eval
+
     print("\nNOISE-INJECTION SUITE (wrong_diagnosis, LIVE API)")
     # Clean pool: gate-PASS claims only, so injected dirt is the only signal
     pool = _gen_claims(400, seed=SEED + 1)
@@ -252,7 +267,7 @@ def mode_full(n: int, dirty_fraction: float) -> int:
 
 def main() -> int:
     p = argparse.ArgumentParser(description=__doc__)
-    p.add_argument("mode", choices=["inspect", "smoke", "full"])
+    p.add_argument("mode", choices=["inspect", "smoke", "full", "noise"])
     p.add_argument("--n", type=int, default=None, help="claim count (smoke=20, full=300)")
     p.add_argument("--dirty-fraction", type=float, default=0.30)
     args = p.parse_args()
@@ -261,6 +276,8 @@ def main() -> int:
         return mode_inspect()
     if args.mode == "smoke":
         return mode_smoke(args.n or 20)
+    if args.mode == "noise":
+        return mode_noise(args.dirty_fraction)
     return mode_full(args.n or 300, args.dirty_fraction)
 
 

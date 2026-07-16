@@ -31,7 +31,7 @@ def _make_scoring_result(**overrides) -> ScoringResult:
         score_id=str(uuid.uuid4()),
         claim_id="CLAIM-001",
         scored_at=datetime.now(timezone.utc),
-        model_id="claude-sonnet-4-6",
+        model_id="claude-sonnet-5",
         prompt_version="v1",
         ncci_edit_version="2024Q1",
         input_hash="abc123",

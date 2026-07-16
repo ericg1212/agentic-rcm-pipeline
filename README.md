@@ -99,7 +99,7 @@ flowchart LR
 - Snowflake RAW: 5 append-only tables, including immutable `ACTION_LOG` and `ADJUDICATION_OUTCOMES`
 
 **LLM Scoring**
-- 5-tool LLM loop (NCCI edit lookup, LCD policy, modifier check, payer history, PA pre-check) at temperature 0, with bounded retry and a deterministic fallback
+- 6-tool LLM loop (NCCI edit lookup, LCD policy, modifier check, payer history, payer rules, PA pre-check) with strict tool schemas, bounded retry, and a deterministic fallback
 - `PayerRuleGraph` in-memory LCD/NCD cache backed by Snowflake `RAW.PAYER_RULES` — sub-10ms rule retrieval, daily LCD / weekly NCD ingestion
 - PA pre-check surfaces prior-auth risk (CARC CO-197) at point of scoring, governed by CMS-0057-F
 - CARC enum enforced at the schema boundary — hallucinated denial codes rejected before scoring
@@ -143,7 +143,7 @@ flowchart LR
 | Layer | Technology |
 |---|---|
 | Streaming | Apache Kafka 3.8.0 (KRaft — no ZooKeeper) |
-| LLM | Anthropic API (`claude-sonnet-4-6`) · tool-use · temperature 0 |
+| LLM | Anthropic API (`claude-sonnet-5`) · tool-use · strict schemas · prompt caching |
 | Warehouse | Snowflake (RAW → STAGING → MART) |
 | Transform | dbt |
 | Quality | Great Expectations |
