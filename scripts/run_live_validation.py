@@ -198,8 +198,8 @@ def mode_smoke(n: int) -> int:
     _print_summary(results, "SMOKE")
 
     schema_violations = [r for r in results if r.fallback_reason == "validation_failed"]
-    print(f"\nschema-violation fallbacks: {len(schema_violations)} "
-          f"(strict tool use should keep this at 0)")
+    print(f"\nvalidation-failure fallbacks: {len(schema_violations)} "
+          f"(CARC/action enum violations, or the null-CARC-at-risk contract check)")
     print("CHECKPOINT: review the lines above before running `full`.")
     return 0
 

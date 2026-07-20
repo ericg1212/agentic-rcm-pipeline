@@ -58,6 +58,11 @@ log = structlog.get_logger(__name__)
 
 MAX_TOOL_ITERATIONS = 5
 VALID_ACTIONS = frozenset(["auto_correct", "flag", "hold", "escalate"])
+# Matches the prompt's own stated rule ("null if risk_score < 30") — enforced
+# here as the deterministic safety net, not just prompt instruction. Phase 3
+# live run found ~1/3 of high-risk claims violated this (some cited a real
+# CARC in the rationale while leaving the structured field null).
+HIGH_RISK_CARC_THRESHOLD = 30
 
 
 @dataclass
@@ -375,6 +380,10 @@ class ClaimScorer:
             denial_code = inputs.get("predicted_denial_code")
             if denial_code is not None and denial_code not in self._carc_codes:
                 log.warning("validation_invalid_carc", code=denial_code)
+                return False
+
+            if risk_score >= HIGH_RISK_CARC_THRESHOLD and denial_code is None:
+                log.warning("validation_null_carc_at_risk", risk_score=risk_score)
                 return False
 
             action = inputs.get("recommended_action")

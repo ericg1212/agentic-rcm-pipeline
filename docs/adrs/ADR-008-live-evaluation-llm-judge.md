@@ -48,6 +48,18 @@ Replace all mock-derived performance claims with live-measured numbers, and grad
 
 **Primary live finding for follow-up:** the dominant judged defect is CARC prediction discipline — roughly a third of scored claims predict a `null` denial code at high risk scores, violating the "null only below risk 30" contract (some cite CO-197 in the rationale while predicting null). Candidate fix: enforce high-risk-requires-CARC in `_validate()` and/or the system prompt. Deliberately not patched in this run — the number is the honest baseline the fix will be measured against.
 
+## Measured-fix result (live run of 2026-07-20, n=18)
+
+Implemented the candidate fix above: `_validate()` now rejects any `risk_score >= 30` submitted with a null `predicted_denial_code`, routing the claim to the deterministic fallback instead of persisting an internally-contradictory result (prompt v1.3.0 also states the contract more directly).
+
+| Metric | Value |
+|---|---|
+| Fallback rate | 33.3% (6/18) — up from the 2.3% baseline (7/300); expected, since this fix converts a class of silent bad-data writes into visible, safe fallbacks |
+| Null-CARC-at-high-risk violations caught | 5/18 (27.8%) — consistent with the ~1/3 baseline rate. The prompt rewrite alone did not measurably reduce the model's underlying tendency to null the field at high risk |
+| Contract-violating records reaching Snowflake | **0** — every violation was caught live and routed to the gate-derived deterministic fallback |
+
+**What this shows:** the fix doesn't rely on having taught the model better behavior — it didn't need to. The deterministic layer catches the violation regardless of model compliance, the same "structural enforcement over sampling trust" principle already used for the CARC-enum and action-enum checks. The trade made explicitly: a higher fallback rate in exchange for zero contract violations in the audit trail. (n=18 here vs. n=300 for the Jul 15 baseline — directionally consistent, not a like-for-like statistical comparison; a larger re-run would tighten this.)
+
 ## Rejected
 
 | Alternative | Why rejected |

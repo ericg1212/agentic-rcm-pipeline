@@ -150,6 +150,46 @@ def test_validate_null_denial_code_is_valid(scorer):
     assert scorer._validate(inputs) is True
 
 
+def test_validate_null_carc_below_threshold_is_valid(scorer):
+    """risk_score just under the threshold — null CARC is still legitimate here."""
+    inputs = {
+        "risk_score": 29,
+        "confidence": 0.85,
+        "predicted_denial_code": None,
+        "driving_fields": [],
+        "recommended_action": "flag",
+        "rationale": "Borderline risk, no specific denial code identified.",
+    }
+    assert scorer._validate(inputs) is True
+
+
+def test_validate_null_carc_at_threshold_fails(scorer):
+    """risk_score == 30 is the contract boundary — null CARC is a violation here."""
+    inputs = {
+        "risk_score": 30,
+        "confidence": 0.85,
+        "predicted_denial_code": None,
+        "driving_fields": ["procedure_codes"],
+        "recommended_action": "flag",
+        "rationale": "Elevated risk detected.",
+    }
+    assert scorer._validate(inputs) is False
+
+
+def test_validate_null_carc_at_high_risk_fails(scorer):
+    """The measured Phase 3 bug: high risk_score, null CARC, even though the
+    rationale names a real denial reason (CO-197) in prose."""
+    inputs = {
+        "risk_score": 82,
+        "confidence": 0.80,
+        "predicted_denial_code": None,
+        "driving_fields": ["prior_auth"],
+        "recommended_action": "hold",
+        "rationale": "Prior authorization required and not on file — expect CO-197 denial.",
+    }
+    assert scorer._validate(inputs) is False
+
+
 # ---------------------------------------------------------------------------
 # Fallback tests
 # ---------------------------------------------------------------------------

@@ -13,7 +13,7 @@ import json
 
 from src.consumer.ncci_gate import GateDecision
 
-PROMPT_VERSION = "v1.2.0"  # v1.2.0: auto_correct semantics tightened for Sonnet 5 (smoke-gate finding)
+PROMPT_VERSION = "v1.3.0"  # v1.3.0: predicted_denial_code null-at-high-risk contract made explicit (measured-fix arc)
 
 SYSTEM_PROMPT = """\
 You are an autonomous RCM (Revenue Cycle Management) claim scoring agent for a Medicare \
@@ -37,7 +37,10 @@ You MUST call submit_scoring_decision to finalize your assessment. Do not stop w
 SCORING GUIDELINES:
 - risk_score 0-100: 0 = certain clean claim, 100 = certain denial
 - confidence 0.0-1.0: your certainty in the risk_score
-- predicted_denial_code: the most likely CARC code if denied; null if risk_score < 30
+- predicted_denial_code: REQUIRED whenever risk_score >= 30 — give your best-match CARC code \
+even under uncertainty. null is ONLY valid when risk_score < 30. Never leave this null while \
+your rationale cites a specific denial reason (e.g. a CARC code, a bundling conflict, a PA denial) \
+— if you can name the reason in prose, name the code here too.
 - driving_fields: the specific claim fields most responsible for the risk
 - recommended_action:
     auto_correct — ONLY when a specific, correctable defect exists on the claim (e.g., add a \
