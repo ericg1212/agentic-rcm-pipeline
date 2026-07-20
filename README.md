@@ -10,7 +10,7 @@
 [![Docker](https://img.shields.io/badge/Docker-Compose-2496ED?style=flat-square&logo=docker&logoColor=white)](https://docs.docker.com/compose/)
 [![Python](https://img.shields.io/badge/Python-3.13-3776AB?style=flat-square&logo=python&logoColor=white)](https://www.python.org/downloads/)
 
-![pytest](https://img.shields.io/badge/pytest-272%20passing-0A9EDC?style=flat-square&logo=pytest&logoColor=white)
+![pytest](https://img.shields.io/badge/pytest-275%20passing-0A9EDC?style=flat-square&logo=pytest&logoColor=white)
 ![Cost per Claim](https://img.shields.io/badge/cost%2Fclaim-%240.012%20live-22c55e?style=flat-square)
 ![ROI](https://img.shields.io/badge/ROI-12%2C500x-d97706?style=flat-square)
 ![LLM Touch Rate](https://img.shields.io/badge/LLM%20touch%20rate-~15%25-8b5cf6?style=flat-square)
@@ -179,10 +179,10 @@ The generator composes novel claim events from these distributions — every den
 ## Testing
 
 ```bash
-make test        # 272 tests
+make test        # 275 tests
 ```
 
-272 tests spanning all four agent layers: perception (claim consumer, NCCI gate, DLQ), reasoning (LLM scorer, calibration, noise-injection eval), action (tiered router, kill-switch store, PA pre-check), and feedback (drift sensors, denial clustering, outcome handling) — plus the Great Expectations scoring-suite contract, the payer rule graph, the live claim generator, and the Phase 3 live-eval harness (LLM-as-Judge batch judging).
+275 tests spanning all four agent layers: perception (claim consumer, NCCI gate, DLQ), reasoning (LLM scorer, calibration, noise-injection eval), action (tiered router, kill-switch store, PA pre-check), and feedback (drift sensors, denial clustering, outcome handling) — plus the Great Expectations scoring-suite contract, the payer rule graph, the live claim generator, and the Phase 3 live-eval harness (LLM-as-Judge batch judging).
 
 ---
 
@@ -206,7 +206,7 @@ dbt/                  # staging + mart models over Snowflake
 docs/adrs/            # 7 architecture decision records
 snowflake/            # RAW-layer DDL
 infra/                # Docker Compose (Kafka KRaft + Schema Registry)
-tests/                # 272 tests
+tests/                # 275 tests
 ```
 
 ---
@@ -218,7 +218,7 @@ make up          # Kafka + Schema Registry + UI (http://localhost:8080)
 cp .env.example .env && make install
 make producer    # start live claim generator
 make consumer    # start NCCI gate consumer
-make test        # 272 tests
+make test        # 275 tests
 ```
 
 Download real NCCI quarterly CSVs from CMS and place in `data/ncci/`. Seed files included for dev.
