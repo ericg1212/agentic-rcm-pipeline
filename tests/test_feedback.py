@@ -353,6 +353,7 @@ def test_drift_alert_reports_noise_floor():
     # whole reason this check must not fire.
     assert alert.noise_floor > observed
     assert "noise floor" in alert.message
+    assert ks.is_active is False
 
 
 def test_drift_message_distinguishes_the_two_gates():
@@ -363,6 +364,7 @@ def test_drift_message_distinguishes_the_two_gates():
     alert = monitor.check_drift()
     assert alert is not None
     assert "within sampling noise" in alert.message
+    assert ks.is_active is False
 
 
 def test_drift_alpha_is_configurable():
