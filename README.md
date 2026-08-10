@@ -70,7 +70,7 @@ flowchart LR
     AUDIT[("Audit Log<br/>immutable, rule_cited")]
     HQ["Human Queue<br/>escalation + rationale"]
     AO[("adjudications.outcomes<br/>payer ERA/835")]
-    FB["Drift Monitor<br/>window 50 vs baseline 100<br/>20pct+ drift fires kill-switch"]
+    FB["Drift Monitor<br/>window 50 vs anchored baseline 100<br/>significant AND material drift<br/>fires kill-switch"]
     PRG[("PayerRuleGraph<br/>LCD/NCD cache<br/>PA Pre-Check")]
     CAL["CalibrationMonitor<br/>Platt scaling + ECE<br/>FCA risk gate"]
 
@@ -124,7 +124,7 @@ flowchart LR
 **Feedback & Measurement**
 - `adjudications.outcomes` consumer closes the pre-submission → clearinghouse → payer → ERA loop, every outcome keyed by arm
 - Holdout lift calculator: intervention vs. control denial rates, absolute + relative lift, minimum-power guard before reporting
-- Drift monitor: rolling 50-outcome window vs. 100-outcome baseline; >20% relative change fires the kill-switch
+- Drift monitor: rolling 50-outcome window vs. an anchored 100-outcome baseline; the kill-switch fires only when the shift is both statistically significant (two-proportion z-test) and material (>20% relative)
 - DBSCAN denial clustering surfaces recurring patterns that feed upstream prompt refinement
 - Dagster-invocable self-healing sensors detect denial-rate spikes and trigger automated re-scoring before human escalation
 - Streamlit ops dashboard: kill-switch control panel, action distribution, live lift, drift status
