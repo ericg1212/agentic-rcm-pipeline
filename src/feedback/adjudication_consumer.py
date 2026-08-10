@@ -59,6 +59,7 @@ class AdjudicationConsumer:
             baseline_window=FeedbackConfig.DRIFT_BASELINE_WINDOW,
             drift_window=FeedbackConfig.DRIFT_ROLLING_WINDOW,
             drift_threshold=FeedbackConfig.DRIFT_THRESHOLD,
+            alpha=FeedbackConfig.DRIFT_ALPHA,
         )
         self._lift_calculator = LiftCalculator(self._store)
         self._consumer = self._build_consumer()

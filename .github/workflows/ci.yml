@@ -18,7 +18,12 @@ jobs:
       - uses: actions/setup-python@v7
         with:
           python-version: "3.13"
-      - run: pip install ruff bandit
+      # Pinned deliberately. Unpinned linters make CI fail on the tool
+      # vendor's release schedule rather than on a change to this repo:
+      # ruff 0.16 promoted UP045/RUF059 to defaults and turned master red
+      # with 95 findings on code that had not changed. Bump these
+      # intentionally, in a PR that also carries the resulting fixes.
+      - run: pip install ruff==0.15.17 bandit==1.9.4
       - run: ruff check src/ tests/
       - run: bandit -r src/ -ll
 
