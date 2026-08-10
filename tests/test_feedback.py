@@ -11,7 +11,7 @@ import pytest
 
 from src.action.kill_switch import KillSwitch
 from src.feedback.adjudication_consumer import AdjudicationConsumer
-from src.feedback.drift_monitor import DriftMonitor
+from src.feedback.drift_monitor import DriftMonitor, two_proportion_test
 from src.feedback.lift_calculator import LiftCalculator, MIN_POWER_N
 from src.feedback.outcome_store import AdjudicationOutcomeStore, OutcomeRecord
 
@@ -249,6 +249,136 @@ def test_drift_zero_baseline_returns_none():
     for i in range(15):
         store.record_outcome(_record(f"c{i}", outcome="PAID"))
     assert monitor.check_drift() is None
+
+
+# ---------------------------------------------------------------------------
+# DriftMonitor — significance gate (two-proportion z-test)
+# ---------------------------------------------------------------------------
+
+def _fill_exact(
+    store: AdjudicationOutcomeStore, n: int, n_denied: int, prefix: str
+) -> None:
+    """Deterministic fill — exactly n_denied denials in n records, no RNG."""
+    for i in range(n):
+        outcome = "DENIED" if i < n_denied else "PAID"
+        store.record_outcome(_record(claim_id=f"{prefix}-{i}", outcome=outcome))
+
+
+def test_two_proportion_test_identical_rates_is_not_significant():
+    z, p = two_proportion_test(12, 100, 6, 50)  # 12% vs 12%
+    assert z == pytest.approx(0.0, abs=1e-9)
+    assert p == pytest.approx(1.0, abs=1e-9)
+
+
+def test_two_proportion_test_large_difference_is_significant():
+    z, p = two_proportion_test(10, 100, 40, 50)  # 10% vs 80%
+    assert z > 0
+    assert p < 0.001
+
+
+def test_two_proportion_test_degenerate_pooled_rate_returns_no_evidence():
+    # Every outcome denied — standard error is zero, z is undefined.
+    assert two_proportion_test(100, 100, 50, 50) == (0.0, 1.0)
+    # No outcome denied — same degenerate case.
+    assert two_proportion_test(0, 100, 0, 50) == (0.0, 1.0)
+    # Empty window.
+    assert two_proportion_test(0, 0, 5, 50) == (0.0, 1.0)
+
+
+def test_drift_material_but_within_noise_does_not_fire():
+    """
+    REGRESSION — this is the defect the significance gate fixes.
+
+    At the shipped windows (100/50) and a realistic 12% baseline, a rolling
+    rate of 18% is a +50% relative change: it clears the 20% materiality
+    floor and the OLD threshold-only logic would have latched the kill-switch.
+    But p ~ 0.32 — the difference is well inside sampling noise, and the
+    observed 6-point gap is smaller than the check's own ~6-point noise
+    floor. It must not fire.
+    """
+    store, ks, monitor = _monitor(baseline_window=100, drift_window=50, threshold=0.20)
+    _fill_exact(store, 100, 12, "base")     # 12% baseline
+    _fill_exact(store, 50, 9, "roll")       # 18% rolling
+
+    alert = monitor.check_drift()
+    assert alert is not None
+    assert alert.relative_change == pytest.approx(0.50, abs=0.01)
+    assert alert.is_material is True          # would have tripped the old logic
+    assert alert.is_significant is False      # but it is indistinguishable from noise
+    assert alert.triggered is False
+    assert alert.kill_switch_activated is False
+    assert ks.is_active is False
+
+
+def test_drift_significant_but_immaterial_does_not_fire():
+    """Large n makes a small real difference detectable — materiality still gates it."""
+    store, ks, monitor = _monitor(baseline_window=8000, drift_window=4000, threshold=0.20)
+    _fill_exact(store, 8000, 960, "base")    # 12.0% baseline
+    _fill_exact(store, 4000, 560, "roll")    # 14.0% rolling — only +16.7% relative
+
+    alert = monitor.check_drift()
+    assert alert is not None
+    assert alert.is_significant is True       # real difference at this sample size
+    assert alert.is_material is False         # but below the 20% floor
+    assert alert.triggered is False
+    assert ks.is_active is False
+
+
+def test_drift_significant_and_material_fires():
+    """Both gates cleared — the kill-switch latches."""
+    store, ks, monitor = _monitor(baseline_window=100, drift_window=50, threshold=0.20)
+    _fill_exact(store, 100, 12, "base")      # 12% baseline
+    _fill_exact(store, 50, 20, "roll")       # 40% rolling — +233% relative
+
+    alert = monitor.check_drift()
+    assert alert is not None
+    assert alert.is_significant is True
+    assert alert.is_material is True
+    assert alert.triggered is True
+    assert alert.kill_switch_activated is True
+    assert ks.is_active is True
+    assert "p=" in ks.reason
+
+
+def test_drift_alert_reports_noise_floor():
+    """The noise floor is what makes an underpowered check visible, not silent."""
+    store, ks, monitor = _monitor(baseline_window=100, drift_window=50, threshold=0.20)
+    _fill_exact(store, 100, 12, "base")
+    _fill_exact(store, 50, 9, "roll")
+
+    alert = monitor.check_drift()
+    assert alert is not None
+    observed = abs(alert.rolling_denial_rate - alert.baseline_denial_rate)
+    # Observed 6-point gap sits inside the ~6-point noise floor — that is the
+    # whole reason this check must not fire.
+    assert alert.noise_floor > observed
+    assert "noise floor" in alert.message
+    assert ks.is_active is False
+
+
+def test_drift_message_distinguishes_the_two_gates():
+    store, ks, monitor = _monitor(baseline_window=100, drift_window=50, threshold=0.20)
+    _fill_exact(store, 100, 12, "base")
+    _fill_exact(store, 50, 9, "roll")
+
+    alert = monitor.check_drift()
+    assert alert is not None
+    assert "within sampling noise" in alert.message
+    assert ks.is_active is False
+
+
+def test_drift_alpha_is_configurable():
+    """A permissive alpha lets the same data through the evidence gate."""
+    store = AdjudicationOutcomeStore()
+    ks = KillSwitch()
+    _fill_exact(store, 100, 12, "base")
+    _fill_exact(store, 50, 9, "roll")        # p ~ 0.32
+
+    strict = DriftMonitor(store, ks, 100, 50, 0.20, alpha=0.01)
+    assert strict.check_drift().triggered is False
+
+    permissive = DriftMonitor(store, KillSwitch(), 100, 50, 0.20, alpha=0.50)
+    assert permissive.check_drift().triggered is True
 
 
 # ---------------------------------------------------------------------------

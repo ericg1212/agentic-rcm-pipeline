@@ -122,8 +122,14 @@ class FeedbackConfig:
     DRIFT_BASELINE_WINDOW = int(os.getenv("DRIFT_BASELINE_WINDOW", "100"))
     # Rolling window size for drift comparison (most recent N outcomes)
     DRIFT_ROLLING_WINDOW = int(os.getenv("DRIFT_ROLLING_WINDOW", "50"))
-    # Relative change threshold that triggers the kill-switch (0.20 = 20% relative change)
+    # Materiality floor on relative change (0.20 = 20%). NOT the trigger on its
+    # own — the kill-switch fires only when a change is BOTH material and
+    # statistically significant. See drift_monitor.py for why.
     DRIFT_THRESHOLD = float(os.getenv("DRIFT_THRESHOLD", "0.20"))
+    # Significance level for the two-proportion z-test evidence gate. 0.01 not
+    # 0.05: the check runs every 50 outcomes, so the multiple-comparison
+    # surface is large and the kill-switch latches until manual review.
+    DRIFT_ALPHA = float(os.getenv("DRIFT_ALPHA", "0.01"))
 
 
 class IntelligenceConfig:

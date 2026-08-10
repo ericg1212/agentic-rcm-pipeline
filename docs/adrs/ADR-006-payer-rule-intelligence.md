@@ -22,6 +22,7 @@
 
 | Alternative | Why rejected |
 |---|---|
+| **Vector store + RAG retrieval** | Rule lookup is keyed by an exact `(hcpcs_code, contractor_id)` pair — an exact-match problem, not a semantic search. Embedding adds a per-claim network hop and an approximation step to a query that has a deterministic answer, and a near-miss policy match is a *wrong rule cited in the audit log*. Freshness is a property of the ingestion cadence (LCD daily, NCD weekly), not of the retrieval mechanism — RAG would require the identical pipeline behind it |
 | **Neo4j graph database** | New infrastructure dbt can't query; graph traversal buys nothing at this cardinality |
 | **Static JSON files only** | No ingestion cadence, no delta tracking — "when did this rule change?" cannot be answered, failing the FCA documentation requirement |
 | **Separate `pa_scorer.py` (second LLM call)** | Doubles API cost and latency to retrieve policy data already in scope; two risk assessments to reconcile for no additional information |
