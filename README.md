@@ -70,7 +70,7 @@ flowchart LR
     AUDIT[("Audit Log<br/>immutable, rule_cited")]
     HQ["Human Queue<br/>escalation + rationale"]
     AO[("adjudications.outcomes<br/>payer ERA/835")]
-    FB["Drift Monitor<br/>window 50 vs baseline 100<br/>20pct+ drift fires kill-switch"]
+    FB["Drift Monitor<br/>window 50 vs anchored baseline 100<br/>significant AND material drift<br/>fires kill-switch"]
     PRG[("PayerRuleGraph<br/>LCD/NCD cache<br/>PA Pre-Check")]
     CAL["CalibrationMonitor<br/>Platt scaling + ECE<br/>FCA risk gate"]
 
