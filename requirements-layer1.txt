@@ -15,10 +15,10 @@ confluent-kafka[avro,schemaregistry]>=2.15.0
 fastavro>=1.12.2
 
 # Data
-numpy>=2.5.1
+numpy>=2.5.2
 
 # Config
-python-dotenv>=1.2.2
+python-dotenv>=1.2.3
 
 # Utilities
 structlog>=26.1.0

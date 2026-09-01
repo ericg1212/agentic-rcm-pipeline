@@ -10,19 +10,19 @@ confluent-kafka[avro,schemaregistry]>=2.15.0
 fastavro>=1.12.2
 
 # LLM
-anthropic>=0.120.2
+anthropic>=1.2.0
 
 # Data
-numpy>=2.5.1
+numpy>=2.5.2
 pandas>=3.0.5
 
 # Dashboard
-streamlit>=1.60.0
-plotly>=6.9.0
+streamlit>=1.62.0
+plotly>=7.0.0
 
 # Config
-python-dotenv>=1.0.0
-pydantic>=2.13.4
+python-dotenv>=1.2.3
+pydantic>=2.13.5
 
 # Utilities
 structlog>=26.1.0
