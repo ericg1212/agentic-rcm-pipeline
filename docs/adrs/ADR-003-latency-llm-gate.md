@@ -24,3 +24,7 @@ The deterministic gate is the cost and latency control: NCCI resolves the confid
 | **Micro-batch (Dagster scheduled run)** | Loses the pre-submission intervention window. A claim in a batch run at T+5 minutes may have already been submitted and adjudicated |
 | **Pre-score with XGBoost, skip NCCI gate** | Right call at Phase 3 production scale (100K+ claims/day). Premature for v1: adds ML training infrastructure before the outcome store has labels to train on. The NCCI gate is a deterministic first-principles check; XGBoost is a learned approximation. Both have a role — NCCI catches what's definitively wrong, XGBoost triage would optimize LLM call routing at scale |
 
+## Measured vs. target (added post-launch)
+
+The ~300–600ms LLM-call estimate above assumed one round trip. Live measurement is **p50 11.6s / p95 16.7s** end-to-end — the p99 < 2s target was missed, because the agent loop makes 2–3 sequential tool calls per claim (policy lookup, then scoring), not one. The deterministic gate still holds: it resolves the confident majority sub-millisecond regardless, so the miss only affects the ~10–15% LLM-touch slice, not overall throughput. Not yet remediated — the fix (parallelizing tool calls, or caching repeat policy lookups) is a Phase 2 item, not done.
+
