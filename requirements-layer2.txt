@@ -5,15 +5,15 @@
 # Update ci.yml to reference this file when Layer 2 tests land.
 
 # Streaming
-confluent-kafka[avro,schemaregistry]>=2.15.0
+confluent-kafka[avro,schemaregistry]>=2.15.1
 fastavro>=1.12.2
 
 # LLM — floor at 0.40.0 for stable tool_choice API; claude-sonnet-5 + strict tools verified on 0.84.0
-anthropic>=1.2.0
+anthropic>=1.8.0
 
 # Data
-numpy>=2.5.2
-pandas>=3.0.5
+numpy>=2.5.3
+pandas>=3.0.6
 
 # Config
 python-dotenv>=1.2.3
