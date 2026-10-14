@@ -12,7 +12,7 @@
 
 ![pytest](https://img.shields.io/badge/pytest-284%20passing-0A9EDC?style=flat-square&logo=pytest&logoColor=white)
 ![Cost per Claim](https://img.shields.io/badge/cost%2Fclaim-%240.012%20live-22c55e?style=flat-square)
-![ROI](https://img.shields.io/badge/ROI-~12%2C600x-d97706?style=flat-square)
+![Break-even](https://img.shields.io/badge/API%20break--even-1%20denial%20%3D%20~12.6K%20claims-d97706?style=flat-square)
 ![LLM Touch Rate](https://img.shields.io/badge/LLM%20touch%20rate-~15%25-8b5cf6?style=flat-square)
 ![Holdout](https://img.shields.io/badge/holdout%20arm-10%25%20control-0ea5e9?style=flat-square)
 
@@ -47,7 +47,7 @@ Live-measured on 300 claims against the production API path (claude-sonnet-5, 20
 | Prompt cache hit rate | **100%** (1.95M tokens served from cache at 0.10× the input rate) |
 | Fallback rate | **2.3%** (0 schema violations under strict tool use) |
 | Median Medicare denial value prevented | **$150** |
-| ROI on analysis cost | **~12,600×** |
+| API-cost break-even | **One prevented $150 denial covers the API cost of ~12,600 scored claims.** Modeled, not realized: API cost only (excludes infrastructure, human review, false positives), on synthetic claims. |
 | LLM touch rate | **~15%** of claims (deterministic gate absorbs the rest) |
 
 Every scored claim logs its token usage and cost — the numbers above come from the persisted results of the live validation run ([ADR-008](docs/adrs/ADR-008-live-evaluation-llm-judge.md)). The gate is the cost control: 85% of claims are adjudicated deterministically in under a millisecond, making LLM spend proportional to genuine ambiguity.
