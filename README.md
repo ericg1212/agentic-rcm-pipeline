@@ -12,7 +12,7 @@
 
 ![pytest](https://img.shields.io/badge/pytest-284%20passing-0A9EDC?style=flat-square&logo=pytest&logoColor=white)
 ![Cost per Claim](https://img.shields.io/badge/cost%2Fclaim-%240.012%20live-22c55e?style=flat-square)
-![ROI](https://img.shields.io/badge/ROI-12%2C500x-d97706?style=flat-square)
+![ROI](https://img.shields.io/badge/ROI-~12%2C600x-d97706?style=flat-square)
 ![LLM Touch Rate](https://img.shields.io/badge/LLM%20touch%20rate-~15%25-8b5cf6?style=flat-square)
 ![Holdout](https://img.shields.io/badge/holdout%20arm-10%25%20control-0ea5e9?style=flat-square)
 
@@ -26,13 +26,13 @@ Denied classifies denials retrospectively. Trust but Verify adds AI governance. 
 
 | Pipeline | Focus | Status |
 |---|---|---|
-| [Denied](https://github.com/ericg1212/healthcare-claims-pipeline) | Retrospective denial classification — separate 27K systematic denials with an upstream fix from 229K documentation failures requiring a different intervention | Live |
-| [Trust but Verify](https://github.com/ericg1212/ai-healthcare-pipeline) | Clinical AI governance — LLM enrichment + rules engine cross-validation, every routing decision explainable | Live |
-| **[Cleared *(this project)*](https://github.com/ericg1212/agentic-rcm-pipeline)** | Real-time prior auth prevention — in-memory payer criteria matching at point of submission, streaming ingestion | Live |
+| [Denied](https://github.com/ericg1212/healthcare-claims-pipeline) | Retrospective denial classification — separate 27K systematic denials with an upstream fix from 229K documentation failures requiring a different intervention | Complete |
+| [Trust but Verify](https://github.com/ericg1212/ai-healthcare-pipeline) | Clinical AI governance — LLM enrichment + rules engine cross-validation, every routing decision explainable | Complete |
+| **[Cleared *(this project)*](https://github.com/ericg1212/agentic-rcm-pipeline)** | Real-time prior auth prevention — in-memory payer criteria matching at point of submission, streaming ingestion | Complete |
 
 ---
 
-**Claim denials are one of healthcare's largest preventable revenue leaks, costing U.S. providers well over $100B a year in rework and write-offs.** This pipeline intercepts claims in real time — before they leave the practice — and prevents the two largest denial root causes: NCCI coding violations and prior authorization gaps. Every claim is scored against real NCCI edits and in-memory LCD/NCD payer authorization criteria using LLM tool-use. The system autonomously corrects, flags, or escalates — each action citing the governing rule in an immutable audit log. Prevention impact is measured, not estimated: a 10% holdout control arm makes the clean-claim-rate lift provable.
+**Cleared stops claim denials before submission instead of explaining them afterward.** Claims stream through Kafka into a deterministic NCCI gate that clears ~85% in under a millisecond; only the ambiguous ~15% reach an LLM that checks real NCCI edits and LCD/NCD criteria through tool calls. Every action — auto-correct, flag, or escalate — cites the governing rule in an audit log, and auto-correct must pass a 3-condition gate (cited rule, calibrated confidence ≥ 0.92, charge ≤ $500). Measured live on 300 claims: $0.0119 per claim, p50 latency 11.6s, 0 schema violations. A 10% holdout control arm makes the lift provable. 284 tests, CI green.
 
 ---
 
@@ -47,7 +47,7 @@ Live-measured on 300 claims against the production API path (claude-sonnet-5, 20
 | Prompt cache hit rate | **100%** (1.95M tokens served from cache at 0.10× the input rate) |
 | Fallback rate | **2.3%** (0 schema violations under strict tool use) |
 | Median Medicare denial value prevented | **$150** |
-| ROI on analysis cost | **12,500×** |
+| ROI on analysis cost | **~12,600×** |
 | LLM touch rate | **~15%** of claims (deterministic gate absorbs the rest) |
 
 Every scored claim logs its token usage and cost — the numbers above come from the persisted results of the live validation run ([ADR-008](docs/adrs/ADR-008-live-evaluation-llm-judge.md)). The gate is the cost control: 85% of claims are adjudicated deterministically in under a millisecond, making LLM spend proportional to genuine ambiguity.
