@@ -47,7 +47,7 @@ Live-measured on 300 claims against the production API path (claude-sonnet-5, 20
 | Prompt cache hit rate | **100%** (1.95M tokens served from cache at 0.10× the input rate) |
 | Fallback rate | **2.3%** (0 schema violations under strict tool use) |
 | Median Medicare denial value prevented | **$150** |
-| API-cost break-even | **One prevented $150 denial covers the API cost of ~12,600 scored claims.** Modeled, not realized: API cost only (excludes infrastructure, human review, false positives), on synthetic claims. |
+| API-cost break-even | **One prevented denial covers the API cost of ~12,600 scored claims** (median denial value $150 ÷ $0.0119 per claim). Modeled, not realized: API cost only, on synthetic claims. |
 | LLM touch rate | **~15%** of claims (deterministic gate absorbs the rest) |
 
 Every scored claim logs its token usage and cost — the numbers above come from the persisted results of the live validation run ([ADR-008](docs/adrs/ADR-008-live-evaluation-llm-judge.md)). The gate is the cost control: 85% of claims are adjudicated deterministically in under a millisecond, making LLM spend proportional to genuine ambiguity.
