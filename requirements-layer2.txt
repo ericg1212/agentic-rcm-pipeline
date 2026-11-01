@@ -5,25 +5,25 @@
 # Update ci.yml to reference this file when Layer 2 tests land.
 
 # Streaming
-confluent-kafka[avro,schemaregistry]>=2.15.0
-fastavro>=1.12.2
+confluent-kafka[avro,schemaregistry]>=2.16.1
+fastavro>=1.13.1
 
 # LLM — floor at 0.40.0 for stable tool_choice API; claude-sonnet-5 + strict tools verified on 0.84.0
-anthropic>=1.2.0
+anthropic>=2.3.0
 
 # Data
-numpy>=2.5.2
-pandas>=3.0.5
+numpy>=2.5.4
+pandas>=3.1.0
 
 # Config
-python-dotenv>=1.2.3
-pydantic>=2.13.5
+python-dotenv>=1.2.4
+pydantic>=2.14.1
 
 # Utilities
 structlog>=26.1.0
-tenacity>=9.1.4
+tenacity>=9.2.1
 
 # Dev / test
-pytest>=9.1.1
+pytest>=9.2.0
 pytest-cov>=7.1.0
 pip-audit>=2.10.1
