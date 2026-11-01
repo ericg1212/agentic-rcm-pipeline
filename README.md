@@ -117,7 +117,7 @@ flowchart LR
 - Tiered router: holdout bypass → kill-switch → escalation gate → auto-correct gate → flag → pass
 - Auto-correct requires all three: LLM-recommended + calibrated confidence ≥ 0.92 + charge ≤ $500 — the conditions map directly to FCA liability elements
 - `CalibrationMonitor` (Platt scaling + ECE) corrects systematic over/under-confidence; the FCA risk gate blocks auto-correct below the calibrated floor
-- Great Expectations contract on every LLM output — score bounds, CARC membership, action enum — rejects malformed outputs before routing
+- Scoring-result validation suite — score bounds, CARC membership, and action enum checks, with Great Expectations batch expectations and an inline fallback; unit-tested
 - Immutable audit log: every action cites its governing rule; escalations carry the full LLM rationale for human sign-off
 - Distributed kill-switch on a compacted control topic — activate anywhere, every replica degrades to flag-only within seconds
 
@@ -154,7 +154,7 @@ flowchart LR
 | LLM | Anthropic API (`claude-sonnet-5`) · tool-use · strict schemas · prompt caching | 6-tool scoring loop for the ambiguous ~15% behind the deterministic gate |
 | Warehouse | Snowflake (RAW → STAGING → MART) | Append-only audit tables, versioned payer rules, LLM usage log |
 | Transform | dbt | Staging + `fct_claim_risk_scores` mart, keyed by holdout / intervention / deterministic cohort |
-| Quality | Great Expectations | Contract on every LLM output — score bounds, CARC membership, action enum |
+| Quality | Great Expectations (batch checks, inline fallback) | Scoring-result validation suite — score bounds, CARC membership, action enum |
 | Dashboard | Streamlit | Ops panel — kill-switch control, action distribution, live lift, drift status |
 | Infra | Docker Compose | Kafka KRaft + Schema Registry local stack |
 | Language | Python 3.13 | Generator, consumers, tool loop, routers, monitors |
@@ -182,7 +182,7 @@ The generator composes novel claim events from these distributions — every den
 make test        # 284 tests
 ```
 
-284 tests spanning all four agent layers: perception (claim consumer, NCCI gate, DLQ), reasoning (LLM scorer, calibration, noise-injection eval), action (tiered router, kill-switch store, PA pre-check), and feedback (drift sensors, denial clustering, outcome handling) — plus the Great Expectations scoring-suite contract, the payer rule graph, the live claim generator, and the Phase 3 live-eval harness (LLM-as-Judge batch judging).
+284 tests spanning all four agent layers: perception (claim consumer, NCCI gate, DLQ), reasoning (LLM scorer, calibration, noise-injection eval), action (tiered router, kill-switch store, PA pre-check), and feedback (drift sensors, denial clustering, outcome handling) — plus the scoring-result validation suite, the payer rule graph, the live claim generator, and the Phase 3 live-eval harness (LLM-as-Judge batch judging).
 
 ---
 
@@ -197,7 +197,7 @@ src/
 ├── feedback/         # outcomes, lift, drift, calibration, clustering (Feedback)
 ├── intelligence/     # payer rule graph + LCD/NCD ingestion
 ├── eval/             # noise-injection evaluation harness
-├── validation/       # Great Expectations scoring suite
+├── validation/       # scoring-result validation suite (Great Expectations batch checks + inline fallback)
 ├── dagster_jobs/     # self-healing sensors
 ├── schemas/          # Avro schemas (claims.raw)
 └── config/           # typed settings
