@@ -19,7 +19,7 @@ numpy==2.5.2
 pyarrow==25.0.1
 
 # Snowflake
-snowflake-connector-python[pandas]==4.7.2
+snowflake-connector-python[pandas]==4.7.3
 snowflake-sqlalchemy==1.11.0
 
 # Quality
